@@ -39,16 +39,13 @@
   .floating{position:fixed;z-index:10;top:50%;left:50%;
     transform:translate(-50%,-50%);text-align:center;
     display:flex;flex-direction:column;align-items:center;gap:1.1rem;
-    pointer-events:none;will-change:transform}
-  .f-pre{font-size:.65rem;letter-spacing:.42em;text-transform:uppercase;color:#fff;
-    text-shadow:0 2px 14px rgba(0,0,0,.85);
+    pointer-events:none;will-change:transform;mix-blend-mode:difference}
+  .f-pre{font-size:.62rem;letter-spacing:.42em;text-transform:uppercase;color:#fff;
     opacity:0;animation:fu .8s .3s var(--ease) forwards}
   .f-title{font-family:var(--serif);font-weight:300;font-size:clamp(3.2rem,8.5vw,6.6rem);
-    line-height:.95;color:#fff;text-shadow:0 4px 32px rgba(0,0,0,.9),0 2px 8px rgba(0,0,0,.7);
-    opacity:0;animation:fu .9s .45s var(--ease) forwards}
-  .f-title em{font-style:italic;color:#e6c478;text-shadow:0 0 28px rgba(201,169,97,.55),0 4px 32px rgba(0,0,0,.85)}
+    line-height:.95;color:#fff;opacity:0;animation:fu .9s .45s var(--ease) forwards}
+  .f-title em{font-style:italic;color:var(--oro)}
   .f-line{width:52px;height:2px;background:rgba(255,255,255,.85);
-    box-shadow:0 0 12px rgba(255,255,255,.4);
     opacity:0;animation:fu .7s .65s var(--ease) forwards}
   @keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
   .nav{position:fixed;top:0;left:0;right:0;z-index:20;padding:1.3rem 2rem;
