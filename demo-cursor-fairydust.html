@@ -88,6 +88,27 @@ document.addEventListener('mousemove', e => {
   dot.style.top  = my + 'px'
 })
 
+// Touch: drive the SAME effect at the finger position (mobile). Additive — desktop untouched.
+function touchMove(e){
+  const t = e.touches[0]; if (!t) return
+  mx = t.clientX; my = t.clientY
+  dot.style.left = mx + 'px'
+  dot.style.top  = my + 'px'
+}
+document.addEventListener('touchstart', e => {
+  const t = e.touches[0]; if (!t) return
+  mx = t.clientX; my = t.clientY
+  // start from finger so the first frame doesn't draw a streak from the old point
+  pmx = mx; pmy = my
+  dot.style.left = mx + 'px'
+  dot.style.top  = my + 'px'
+  e.preventDefault()
+}, { passive:false })
+document.addEventListener('touchmove', e => {
+  touchMove(e)
+  e.preventDefault()
+}, { passive:false })
+
 function drawStar(ctx, cx, cy, spikes, ro, ri){
   let rot = Math.PI/2*3, step = Math.PI/spikes
   ctx.beginPath(); ctx.moveTo(cx, cy-ro)

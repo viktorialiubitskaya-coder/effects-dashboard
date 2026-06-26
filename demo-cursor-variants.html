@@ -114,6 +114,34 @@ document.addEventListener('mousemove', e => {
   cursorEl.style.top  = my + 'px'
 })
 
+// ── touch follow (mobile) — mirrors mouse path for ALL variants ──
+// preventDefault only when the touch drives the drawing surface,
+// never when it targets the variant switcher (so taps still switch).
+function onCtrl(e){ return e.target && e.target.closest && e.target.closest('.switcher') }
+function moveTo(x, y){
+  mx = x; my = y
+  cursorEl.style.left = mx + 'px'
+  cursorEl.style.top  = my + 'px'
+}
+document.addEventListener('touchstart', e => {
+  if (onCtrl(e)) return                 // let switcher buttons receive the tap
+  const t = e.touches[0]; if(!t) return
+  pmx = mx = t.clientX; pmy = my = t.clientY   // anchor so first move spawns from finger
+  cursorEl.style.left = mx + 'px'; cursorEl.style.top = my + 'px'
+  e.preventDefault()
+}, {passive:false})
+document.addEventListener('touchmove', e => {
+  if (onCtrl(e)) return
+  const t = e.touches[0]; if(!t) return
+  moveTo(t.clientX, t.clientY)
+  e.preventDefault()
+}, {passive:false})
+document.addEventListener('touchend', e => {
+  if (onCtrl(e)) return
+  const t = e.changedTouches[0]
+  if (t) moveTo(t.clientX, t.clientY)
+}, {passive:false})
+
 // ── Particle ──────────────────────────────────────────────
 class Particle {
   constructor(x, y, opts) {

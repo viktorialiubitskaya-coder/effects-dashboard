@@ -89,6 +89,17 @@ document.addEventListener('mousemove', e => {
   dot.style.top  = my + 'px'
 })
 
+// Touch support (phones) — mirrors mousemove, prevents scroll on single 100vh screen
+function handleTouch(e){
+  const t = e.touches[0] || e.changedTouches[0]
+  if (!t) return
+  mx = t.clientX; my = t.clientY
+  dot.style.left = mx + 'px'
+  dot.style.top  = my + 'px'
+}
+document.addEventListener('touchstart', e => { e.preventDefault(); handleTouch(e) }, {passive:false})
+document.addEventListener('touchmove',  e => { e.preventDefault(); handleTouch(e) }, {passive:false})
+
 class Particle {
   constructor(x, y) {
     this.x = x + (Math.random()-.5)*0

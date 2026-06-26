@@ -87,6 +87,23 @@ document.addEventListener('mousemove', e => {
   dot.style.top  = my + 'px'
 })
 
+// Touch support — mirrors the mouse path on phones (additive, desktop untouched)
+function touchMove(e){
+  const t = e.touches[0] || e.changedTouches[0]
+  if (!t) return
+  mx = t.clientX; my = t.clientY
+  dot.style.left = mx + 'px'
+  dot.style.top  = my + 'px'
+  e.preventDefault()
+}
+document.addEventListener('touchstart', e => {
+  // jump previous to current so a fresh tap doesn't streak ink from the old point
+  const t = e.touches[0] || e.changedTouches[0]
+  if (t){ pmx = mx = t.clientX; pmy = my = t.clientY }
+  touchMove(e)
+}, {passive:false})
+document.addEventListener('touchmove', touchMove, {passive:false})
+
 class Particle {
   constructor(x, y) {
     this.x = x; this.y = y
