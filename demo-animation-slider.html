@@ -98,6 +98,18 @@ html,body{height:100%;overflow:hidden;font-family:var(--mono);
   padding:.22rem .46rem;background:rgba(255,255,255,.2);backdrop-filter:blur(8px);
   border-radius:2px;white-space:nowrap}
 .tag em{color:rgba(0,0,0,.5);font-style:normal}
+
+/* ── MOBILE ──────────────────────────────────────────────── */
+@media (max-width: 768px){
+  .stage{grid-template-columns:1fr; grid-template-rows:1fr 46vh}
+  .left{padding:4.5rem 1.4rem 1rem; gap:.9rem}
+  .title-el{font-size:clamp(2.6rem,13vw,4rem)}
+  .slide-desc{font-size:.95rem; max-width:none}
+  .right{height:46vh}
+  .card[data-state="n1"],.card[data-state="n2"]{opacity:0;pointer-events:none}
+  .card[data-state="active"]{width:min(82vw,360px); height:min(60vw,270px)}
+  .hint{display:none}
+}
 </style>
 </head>
 <body>

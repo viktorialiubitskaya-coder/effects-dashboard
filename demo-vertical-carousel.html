@@ -175,6 +175,77 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   padding:.2rem .44rem;border-radius:2px;
 }
 .footer-tag em{color:rgba(0,0,0,.45);font-style:normal}
+
+/* ───────────────── MOBILE (≤768px) ─────────────────
+   Reflow the desktop two-column carousel into a single
+   column: heading on top, cards stacked full-width below.
+   All card geometry is set inline by JS, so overrides use
+   !important and are scoped to this media block only.      */
+@media (max-width:768px){
+  html,body{
+    height:auto;min-height:100%;
+    overflow-x:hidden;overflow-y:auto;
+  }
+  .stage{
+    position:static;display:block;
+    grid-template-columns:none;
+    min-height:100vh;
+  }
+  /* hide oversized decorative circles (main overflow source) */
+  .circles{display:none !important}
+
+  .left{
+    overflow:visible;
+    padding:2.4rem 1.25rem 1rem;
+    justify-content:flex-start;
+  }
+  .pre-tag{font-size:.62rem;margin-bottom:.7rem}
+  .main-title{
+    font-size:clamp(2rem,9vw,3rem);
+    margin-bottom:.9rem;
+  }
+  .sub{font-size:.9rem;max-width:none;margin-bottom:1.2rem}
+  .hint{font-size:.65rem;margin-bottom:1rem}
+  .counter-wrap{width:64px;height:22px;font-size:.7rem}
+
+  /* card column: static vertical stack, full width */
+  .right{
+    position:static;
+    display:block;
+    overflow:visible;
+    padding:0 1.25rem 6rem;
+  }
+  .prop-card{
+    position:static !important;
+    width:100% !important;
+    height:auto !important;
+    transform:none !important;
+    opacity:1 !important;
+    margin-bottom:.85rem;
+    border-left-width:4px;
+  }
+  /* fixed, readable thumbnail regardless of JS state */
+  .prop-card .card-photo{
+    width:92px !important;
+    align-self:stretch;
+    min-height:96px;
+  }
+  .card-body{padding:.9rem 0}
+  .card-type{font-size:.62rem}
+  .card-name{font-size:1rem}
+  .card-location{font-size:.78rem}
+  .card-desc{font-size:.78rem}
+  .prop-card[data-state="active"] .card-desc{max-height:120px}
+  .card-right{padding:.9rem 0 .9rem .4rem}
+  .card-price{font-size:1.05rem}
+  .card-details{font-size:.72rem}
+  .card-badge{font-size:.55rem}
+  .card-cta{font-size:.62rem}
+
+  /* keep the fixed UI chrome out of the way / no overflow */
+  .progress-bar{right:.5rem}
+  .footer-tag{display:none}
+}
 </style>
 </head>
 <body>

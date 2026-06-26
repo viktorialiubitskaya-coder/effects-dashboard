@@ -304,6 +304,33 @@
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  /* ── Mobile fit (overrides desktop) ── */
+  @media (max-width: 768px) {
+    html, body { max-width: 100%; overflow-x: hidden; }
+    body { padding: 1.75rem 0.75rem 3rem; }
+
+    .header { margin-bottom: 1.25rem; }
+    .subtitle { font-size: 0.9rem; max-width: 100%; }
+
+    /* The 3D front card is magnified to ~585px by perspective; scale the whole
+       stage down so the carousel fits inside a phone viewport and the page
+       no longer scrolls sideways. */
+    .stage-wrap { max-width: 100%; overflow-x: clip; }
+    .stage {
+      height: 230px;
+      transform: scale(0.52);
+      transform-origin: 50% 50%;
+      overflow-x: clip;   /* clip side-card bleed; keeps reflection visible below */
+    }
+
+    .info-wrap { padding: 0.75rem 0.5rem 0; min-height: 150px; }
+    .info-panel { padding: 0.75rem 0.5rem 0; }
+    .info-desc { font-size: 0.85rem; max-width: 100%; }
+
+    .cta-wrap { margin-top: 1.5rem; }
+    .agency-tag { right: 0.9rem; bottom: 0.9rem; }
+  }
 </style>
 </head>
 <body>

@@ -389,6 +389,64 @@
     backdrop-filter: blur(8px);
   }
   .tag span { color: var(--oro); }
+
+  /* ─────────────────────────────────────────────
+     MOBILE / TOUCH  (≤768px) — additive only.
+     Desktop appearance/behaviour above is untouched.
+     ───────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    :root { --nav-h: 60px; }
+
+    /* Nav fits 390px: shrink, hide desktop CTA, keep 3 triggers visible */
+    .nav-inner { padding: 0 0.85rem; gap: 0.45rem; }
+    .nav-logo-a { font-size: 0.55rem; letter-spacing: 0.16em; }
+    .nav-logo-b { font-size: 0.4rem;  letter-spacing: 0.2em; }
+    .nav-links  { gap: 0; flex: 1 1 auto; justify-content: flex-end; }
+    .nav-btn {
+      font-size: 0.52rem;
+      letter-spacing: 0.04em;
+      padding: 0.35rem 0.4rem;
+      gap: 0.22rem;
+    }
+    .nav-chevron { font-size: 0.4rem; }
+    .nav-cta { display: none; }        /* free up horizontal space */
+    .nav-right { gap: 0; }
+
+    /* Hero scales down so first screen reads cleanly */
+    .hero { padding: 2.5rem 1.25rem; }
+    .hero-pre { font-size: 0.5rem; margin-bottom: 1.25rem; }
+    .hero-title { font-size: clamp(2.6rem, 13vw, 3.4rem); margin-bottom: 1.75rem; }
+    .hero-hint { font-size: 0.55rem; }
+
+    /* Mega = full-width stacked section filling the screen below the nav */
+    .mega { height: calc(100dvh - var(--nav-h)); }
+    .mega-panel { flex-direction: column; }
+
+    /* Image becomes a banner on top */
+    .mr {
+      flex: 0 0 38vh;
+      order: -1;
+      max-height: 320px;
+    }
+
+    /* Text column stacks below, scrolls if needed */
+    .ml {
+      flex: 1 1 auto;
+      padding: 1.5rem 1.25rem 2rem;
+      border-right: none;
+      justify-content: flex-start;
+      overflow-y: auto;
+    }
+    .ml-cat { margin-bottom: 1.25rem; }
+    .ml-link { font-size: clamp(1.6rem, 7vw, 2rem); padding: 0.6rem 0; }
+    .ml-arr { opacity: 1; transform: none; }   /* hint tappability on touch */
+    .ml-all { margin-top: 1.25rem; }
+
+    /* Close (✕) easier to hit */
+    .nav-x { font-size: 1.1rem; padding: 0.4rem 0.2rem; }
+
+    .tag { display: none; }            /* avoid covering content on small screens */
+  }
 </style>
 </head>
 <body>
@@ -595,6 +653,28 @@ document.querySelectorAll('.ml-link').forEach(link => {
       el.classList.toggle('is-active', +el.dataset.for === idx))
   })
 })
+
+/* ── Touch / mobile only (guarded — desktop hover untouched) ──
+   Panel opening is already click-based, so it works on tap as-is.
+   Here we add the featured-image switch (desktop does it on mouseenter)
+   to a tap on each link, since touch devices have no hover. */
+const touchMQ = window.matchMedia('(hover: none), (max-width: 768px)')
+if (touchMQ.matches) {
+  document.querySelectorAll('.ml-link').forEach(link => {
+    link.addEventListener('click', e => {
+      const idx = +link.dataset.img
+      if (isNaN(idx)) return
+      e.preventDefault()              // href="#" — stay put, just swap the image
+      const panel = link.closest('.mega-panel')
+      panel.querySelectorAll('.feat-img').forEach((el, i) =>
+        el.classList.toggle('is-active', i === idx))
+      panel.querySelectorAll('.feat-glow').forEach((el, i) =>
+        el.classList.toggle('is-active', i === idx))
+      panel.querySelectorAll('.feat-cap-item').forEach(el =>
+        el.classList.toggle('is-active', +el.dataset.for === idx))
+    })
+  })
+}
 </script>
 </body>
 </html>
