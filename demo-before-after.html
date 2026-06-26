@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Before / After · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:    #050d18;
+    --oro:   #c9a961;
+    --text:  #f5f1e8;
+    --dim:   rgba(245,241,232,0.45);
+    --serif: Georgia, 'Times New Roman', serif;
+    --mono:  'Courier New', monospace;
+    --ease:  cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html, body { height: 100%; background: var(--bg); overflow: hidden; }
+
+  /* ── Stage ── */
+  .stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    cursor: ew-resize;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ── Pairs ── */
+  .pair {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.55s ease;
+    pointer-events: none;
+  }
+  .pair.is-active { opacity: 1; pointer-events: auto; }
+
+  .img-before, .img-after {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    will-change: clip-path;
+  }
+  .img-before { filter: grayscale(0.25) brightness(0.88); }
+
+  /* ── Divider ── */
+  .divider {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      var(--oro) 10%,
+      var(--oro) 90%,
+      transparent 100%
+    );
+    z-index: 10;
+    will-change: left;
+    pointer-events: none;
+  }
+
+  /* ── Handle ── */
+  .handle {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translate(-50%, -50%);
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 1.5px solid var(--oro);
+    background: rgba(5,13,24,0.88);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    z-index: 11;
+    cursor: ew-resize;
+    pointer-events: auto;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s;
+    box-shadow: 0 0 0 0 rgba(201,169,97,0);
+  }
+  .stage.dragging .handle {
+    transform: translate(-50%, -50%) scale(1.12);
+    box-shadow: 0 0 0 6px rgba(201,169,97,0.12);
+  }
+  .h-arr { color: var(--oro); font-size: 0.65rem; line-height: 1; }
+
+  /* ── Labels ── */
+  .label {
+    position: absolute;
+    top: 5.5rem;
+    z-index: 15;
+    font-family: var(--mono);
+    font-size: 0.48rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.6rem;
+    border: 1px solid;
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .label-before {
+    left: 2rem;
+    color: var(--dim);
+    border-color: rgba(245,241,232,0.12);
+    background: rgba(5,13,24,0.55);
+  }
+  .label-after {
+    right: 2rem;
+    color: var(--oro);
+    border-color: rgba(201,169,97,0.28);
+    background: rgba(5,13,24,0.55);
+  }
+
+  /* ── Edge gradients ── */
+  .edge-l, .edge-r {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 100px;
+    z-index: 8;
+    pointer-events: none;
+  }
+  .edge-l { left: 0; background: linear-gradient(to right, rgba(5,13,24,0.45), transparent); }
+  .edge-r { right: 0; background: linear-gradient(to left, rgba(5,13,24,0.45), transparent); }
+
+  /* ── Top bar ── */
+  .top-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 20;
+    padding: 1.75rem 2.5rem 4rem;
+    background: linear-gradient(to bottom, rgba(5,13,24,0.85) 0%, transparent 100%);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
+    pointer-events: none;
+  }
+  .logo { display: flex; flex-direction: column; line-height: 1.25; }
+  .logo-a { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text); font-family: var(--mono); }
+  .logo-b { font-size: 0.46rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--oro); font-family: var(--mono); }
+
+  .pair-title {
+    font-family: var(--serif);
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 300;
+    color: var(--text);
+    text-align: center;
+    line-height: 1;
+    transition: opacity 0.3s, transform 0.4s var(--ease);
+  }
+  .pair-title.switching { opacity: 0; transform: translateY(8px); }
+  .pair-result {
+    font-family: var(--mono);
+    font-size: 0.52rem;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    text-align: center;
+    margin-top: 0.4rem;
+    transition: opacity 0.3s, transform 0.4s var(--ease);
+    white-space: nowrap;
+  }
+  .pair-result .highlight { color: var(--oro); }
+  .pair-result.switching { opacity: 0; transform: translateY(8px); }
+
+  .top-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+  }
+  .pair-counter {
+    font-family: var(--mono);
+    font-size: 0.5rem;
+    letter-spacing: 0.18em;
+    color: var(--dim);
+  }
+
+  /* ── Bottom bar ── */
+  .bottom-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 20;
+    padding: 4rem 2.5rem 2.25rem;
+    background: linear-gradient(to top, rgba(5,13,24,0.92) 0%, rgba(5,13,24,0.5) 50%, transparent 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 2px;
+    pointer-events: auto;
+  }
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.42rem 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.5rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: rgba(5,13,24,0.7);
+    border: 1px solid rgba(245,241,232,0.1);
+    color: var(--dim);
+    cursor: pointer;
+    transition: all 0.25s;
+    backdrop-filter: blur(8px);
+  }
+  .tab:hover { color: var(--text); border-color: rgba(245,241,232,0.22); }
+  .tab.is-active { color: var(--oro); border-color: rgba(201,169,97,0.4); }
+  .tab-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  .hint {
+    font-family: var(--mono);
+    font-size: 0.46rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(245,241,232,0.25);
+  }
+
+  /* ── Tag ── */
+  .tag {
+    position: absolute;
+    top: 1.75rem; right: 2.5rem;
+    z-index: 25;
+    font-family: var(--mono);
+    font-size: 0.44rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--dim);
+    border: 1px solid rgba(201,169,97,0.15);
+    padding: 0.28rem 0.55rem;
+    background: rgba(10,25,41,0.7);
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+  }
+  .tag span { color: var(--oro); }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <!-- Pair 1: Lobby Hotel -->
+  <div class="pair is-active" id="pair-0">
+    <div class="img-before" style="background-image:url(img/ba/ba-lobby-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/ba/ba-lobby-after.jpg)"></div>
+  </div>
+
+  <!-- Pair 2: Ristorante -->
+  <div class="pair" id="pair-1">
+    <div class="img-before" style="background-image:url(img/ba/ba-rest-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/ba/ba-rest-after.jpg)"></div>
+  </div>
+
+  <!-- Pair 3: Camera -->
+  <div class="pair" id="pair-2">
+    <div class="img-before" style="background-image:url(img/ba/ba-room-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/ba/ba-room-after.jpg)"></div>
+  </div>
+
+  <!-- Divider + Handle -->
+  <div class="divider" id="divider">
+    <div class="handle" id="handle">
+      <span class="h-arr">←</span>
+      <span class="h-arr">→</span>
+    </div>
+  </div>
+
+  <!-- Labels -->
+  <div class="label label-before" id="label-b">Prima</div>
+  <div class="label label-after"  id="label-a">Dopo</div>
+
+  <!-- Edge fades -->
+  <div class="edge-l"></div>
+  <div class="edge-r"></div>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="logo">
+      <span class="logo-a">Digital Evolution</span>
+      <span class="logo-b">Italy · Restyling</span>
+    </div>
+    <div>
+      <div class="pair-title"  id="pair-title">Lobby Hotel</div>
+      <div class="pair-result" id="pair-result">Invisibile online → <span class="highlight">+180% prenotazioni dirette</span></div>
+    </div>
+    <div class="top-right">
+      <span class="pair-counter" id="pair-counter">01 / 03</span>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+    <div class="tabs" id="tabs">
+      <button class="tab is-active" data-pair="0"><span class="tab-dot"></span>Lobby Hotel</button>
+      <button class="tab" data-pair="1"><span class="tab-dot"></span>Ristorante</button>
+      <button class="tab" data-pair="2"><span class="tab-dot"></span>Camera Luxury</button>
+    </div>
+    <span class="hint">Trascina per confrontare</span>
+  </div>
+
+</div>
+
+<div class="tag">Effetto: <span>Before / After</span> · Digital Evolution Italy</div>
+
+<script>
+const PAIRS = [
+  { name: 'Lobby Hotel',   num: '01', result: 'Invisibile online → <span class="highlight">+180% prenotazioni dirette</span>' },
+  { name: 'Ristorante',    num: '02', result: 'Solo Facebook → <span class="highlight">+240% coperti prenotati online</span>' },
+  { name: 'Camera Luxury', num: '03', result: 'Foto di bassa qualità → <span class="highlight">RevPAR +65% in 6 mesi</span>' },
+]
+const TOTAL = PAIRS.length
+
+const stage    = document.getElementById('stage')
+const divider  = document.getElementById('divider')
+const labelB   = document.getElementById('label-b')
+const labelA   = document.getElementById('label-a')
+const title    = document.getElementById('pair-title')
+const result   = document.getElementById('pair-result')
+const counter  = document.getElementById('pair-counter')
+const tabs     = document.querySelectorAll('.tab')
+const pairs    = document.querySelectorAll('.pair')
+
+let splitTarget = 50
+let splitCur    = 12    // starts low → intro sweep
+let dragging    = false
+let activePair  = 0
+let time        = 0
+
+/* ── Drag ── */
+function pct(e) {
+  const rect = stage.getBoundingClientRect()
+  const cx = e.touches ? e.touches[0].clientX : e.clientX
+  return Math.max(5, Math.min(95, ((cx - rect.left) / rect.width) * 100))
+}
+
+stage.addEventListener('mousedown',  e => { dragging = true; stage.classList.add('dragging'); splitTarget = pct(e) })
+stage.addEventListener('touchstart', e => { dragging = true; stage.classList.add('dragging'); splitTarget = pct(e) }, { passive: true })
+window.addEventListener('mousemove',  e => { if (dragging) splitTarget = pct(e) })
+window.addEventListener('touchmove',  e => { if (dragging) splitTarget = pct(e) }, { passive: true })
+window.addEventListener('mouseup',    () => { dragging = false; stage.classList.remove('dragging') })
+window.addEventListener('touchend',   () => { dragging = false; stage.classList.remove('dragging') })
+
+/* ── Pair switch ── */
+function setPair(idx) {
+  if (idx === activePair) return
+  activePair = idx
+
+  // Title + result swap
+  title.classList.add('switching')
+  result.classList.add('switching')
+  setTimeout(() => {
+    title.textContent   = PAIRS[idx].name
+    result.innerHTML    = PAIRS[idx].result
+    counter.textContent = `${PAIRS[idx].num} / 0${TOTAL}`
+    title.classList.remove('switching')
+    result.classList.remove('switching')
+  }, 220)
+
+  pairs.forEach((p, i) => p.classList.toggle('is-active', i === idx))
+  tabs.forEach((t, i)  => t.classList.toggle('is-active', i === idx))
+
+  // Reset divider to center
+  splitTarget = 50
+  splitCur    = 50
+}
+
+tabs.forEach(tab => tab.addEventListener('click', () => setPair(+tab.dataset.pair)))
+
+/* ── rAF loop ── */
+function tick() {
+  // Auto-oscillate when not dragging (after intro completes)
+  if (!dragging && Math.abs(splitCur - 50) < 3 && time > 120) {
+    time += 1
+    splitTarget = 50 + Math.sin(time * 0.011) * 33
+  } else if (!dragging && time <= 120) {
+    time += 1
+  }
+
+  // Lerp
+  splitCur += (splitTarget - splitCur) * 0.09
+
+  // Apply to active after image
+  const afterEl = pairs[activePair].querySelector('.img-after')
+  afterEl.style.clipPath = `inset(0 0 0 ${splitCur}%)`
+
+  // Move divider
+  divider.style.left = `${splitCur}%`
+
+  // Label opacity — fade out when edge is near
+  labelB.style.opacity = Math.min(1, splitCur / 15).toFixed(3)
+  labelA.style.opacity = Math.min(1, (100 - splitCur) / 15).toFixed(3)
+
+  requestAnimationFrame(tick)
+}
+
+tick()
+</script>
+</body>
+</html>

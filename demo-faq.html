@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FAQ · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --bg:#050d18; --surface:#0a1929;
+    --border:rgba(201,169,97,0.12); --border-hi:rgba(201,169,97,0.35);
+    --oro:#c9a961; --oro-dim:rgba(201,169,97,0.3);
+    --text:#f5f1e8; --dim:rgba(245,241,232,0.45); --muted:rgba(245,241,232,0.18);
+    --serif:Georgia,'Times New Roman',serif; --mono:'Courier New',monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  html { background:var(--bg); }
+  body { background:var(--bg); color:var(--text); font-family:var(--mono); min-height:100vh; }
+
+  /* Aurora */
+  .aurora { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .ab { position:absolute; border-radius:50%; }
+  .ab-1 { width:900px; height:550px; top:-150px; left:-250px;
+    background:radial-gradient(ellipse,rgba(26,80,200,1) 0%,transparent 65%);
+    filter:blur(110px); opacity:0.055; animation:ab1 50s ease-in-out infinite alternate; }
+  .ab-2 { width:600px; height:600px; bottom:-150px; right:-150px;
+    background:radial-gradient(ellipse,rgba(140,80,5,1) 0%,transparent 65%);
+    filter:blur(100px); opacity:0.05; animation:ab2 62s ease-in-out infinite alternate; animation-delay:-20s; }
+  @keyframes ab1 { from{transform:translate(0,0)} to{transform:translate(100px,70px)} }
+  @keyframes ab2 { from{transform:translate(0,0)} to{transform:translate(-80px,-60px)} }
+
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:radial-gradient(circle,rgba(201,169,97,0.035) 1px,transparent 1px);
+    background-size:44px 44px; pointer-events:none; z-index:0;
+  }
+
+  /* Layout */
+  .page {
+    position:relative; z-index:1;
+    max-width:780px; margin:0 auto;
+    padding:4rem clamp(1.5rem,5vw,4rem) 6rem;
+  }
+
+  /* Header */
+  .header { margin-bottom:4rem; }
+  .h-pre  { font-size:0.48rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--oro); margin-bottom:0.7rem; }
+  .h-title { font-family:var(--serif); font-size:clamp(2rem,4vw,3.2rem); font-weight:300; line-height:1.1; margin-bottom:1rem; }
+  .h-sub  { font-size:0.6rem; letter-spacing:0.06em; color:var(--dim); line-height:1.8; }
+  .h-count { display:inline-flex; align-items:center; gap:0.5rem; margin-top:1.5rem; font-size:0.48rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); }
+  .h-count-num { font-family:var(--serif); font-size:1.4rem; font-weight:300; color:rgba(201,169,97,0.4); line-height:1; }
+
+  /* FAQ list */
+  .faq-list { display:flex; flex-direction:column; }
+
+  /* Item */
+  .faq-item {
+    border-top:1px solid rgba(245,241,232,0.07);
+    opacity:0; transform:translateY(18px);
+    transition:opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  }
+  .faq-item:last-child { border-bottom:1px solid rgba(245,241,232,0.07); }
+  .faq-item.visible { opacity:1; transform:none; }
+
+  /* Trigger row */
+  .faq-trigger {
+    width:100%; background:none; border:none; color:inherit; font-family:inherit;
+    display:grid; grid-template-columns:2.5rem 1fr 2rem;
+    align-items:start; gap:1rem;
+    padding:1.4rem 0; cursor:pointer; text-align:left;
+    transition:background 0.2s;
+  }
+  .faq-trigger:hover .faq-q { color:var(--text); }
+  .faq-trigger:hover .faq-num { color:var(--oro-dim); }
+
+  .faq-num {
+    font-family:var(--serif); font-size:0.7rem; font-weight:300;
+    color:var(--muted); padding-top:0.1rem;
+    transition:color 0.3s;
+  }
+  .faq-q {
+    font-size:clamp(0.75rem,1.4vw,1rem); letter-spacing:0.04em;
+    color:var(--dim); line-height:1.5;
+    transition:color 0.3s;
+  }
+  .faq-icon {
+    width:20px; height:20px; border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    margin-top:0.1rem; flex-shrink:0;
+    transition:border-color 0.3s, transform 0.4s var(--ease), background 0.3s;
+    font-size:0.7rem; color:var(--muted);
+  }
+
+  /* Open state */
+  .faq-item.open .faq-num   { color:var(--oro); }
+  .faq-item.open .faq-q     { color:var(--text); }
+  .faq-item.open .faq-icon  {
+    transform:rotate(45deg);
+    border-color:var(--oro-dim);
+    background:rgba(201,169,97,0.07);
+    color:var(--oro);
+  }
+  .faq-item.open { border-top-color:rgba(201,169,97,0.2); }
+
+  /* Answer — CSS grid trick: no JS height calc */
+  .faq-body {
+    display:grid;
+    grid-template-rows:0fr;
+    transition:grid-template-rows 0.45s var(--ease);
+  }
+  .faq-item.open .faq-body { grid-template-rows:1fr; }
+
+  .faq-inner {
+    overflow:hidden;
+  }
+
+  .faq-answer {
+    display:grid; grid-template-columns:2.5rem 1fr; gap:1rem;
+    padding-bottom:1.6rem;
+    opacity:0; transform:translateY(-6px);
+    transition:opacity 0.4s 0.1s var(--ease), transform 0.4s 0.1s var(--ease);
+  }
+  .faq-item.open .faq-answer { opacity:1; transform:none; }
+
+  .faq-answer-text {
+    font-size:0.62rem; letter-spacing:0.05em; color:var(--dim);
+    line-height:1.9; grid-column:2;
+  }
+  .faq-answer-text strong { color:var(--oro); font-weight:normal; }
+
+  /* Gold left accent */
+  .faq-item.open::before {
+    content:''; display:block; height:1px;
+  }
+
+  /* Nav */
+  .nav { position:fixed; top:0; left:0; right:0; z-index:50; padding:1.2rem 2rem; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(to bottom,rgba(5,13,24,0.95),transparent); pointer-events:none; }
+  .logo { display:flex; flex-direction:column; }
+  .logo-a { font-size:0.58rem; letter-spacing:0.22em; text-transform:uppercase; }
+  .logo-b { font-size:0.44rem; letter-spacing:0.28em; text-transform:uppercase; color:var(--oro); }
+
+  .tag { position:fixed; bottom:1.5rem; right:1.5rem; z-index:50; font-size:0.44rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--dim); border:1px solid var(--border); padding:0.28rem 0.55rem; background:rgba(10,25,41,0.85); backdrop-filter:blur(8px); }
+  .tag span { color:var(--oro); }
+</style>
+</head>
+<body>
+
+<div class="aurora">
+  <div class="ab ab-1"></div>
+  <div class="ab ab-2"></div>
+</div>
+
+<nav class="nav">
+  <div class="logo"><span class="logo-a">Digital Evolution</span><span class="logo-b">Italy · FAQ</span></div>
+</nav>
+
+<div class="page">
+
+  <div class="header">
+    <p class="h-pre">Domande frequenti</p>
+    <h1 class="h-title">Hai dubbi?<br>Abbiamo le risposte.</h1>
+    <p class="h-sub">Tutto quello che i nostri clienti ci chiedono prima di iniziare.</p>
+    <div class="h-count"><span class="h-count-num">08</span>domande</div>
+  </div>
+
+  <div class="faq-list" id="faqList"></div>
+
+</div>
+
+<div class="tag">Effetto: <span>FAQ Accordion</span> · Digital Evolution Italy</div>
+
+<script>
+const DATA = [
+  {
+    q: "Quanto costa un sito web professionale?",
+    a: "I prezzi dipendono dalle esigenze specifiche del progetto. Un sito vetrina parte da <strong>€890</strong>, mentre soluzioni con prenotazioni online, multilingua o e-commerce partono da <strong>€1.590</strong>. Offriamo sempre un preventivo gratuito dopo una prima consulenza.",
+  },
+  {
+    q: "In quanto tempo vedrete i risultati con la SEO?",
+    a: "La SEO è un investimento a lungo termine: i primi miglioramenti di posizionamento arrivano tipicamente entro <strong>60–90 giorni</strong>. Risultati significativi in termini di traffico organico si vedono tra i <strong>4 e i 6 mesi</strong>. Forniamo report mensili per tracciare ogni progresso.",
+  },
+  {
+    q: "Posso gestire il sito da solo dopo il lancio?",
+    a: "Assolutamente sì. Utilizziamo CMS intuitivi e forniamo una <strong>sessione di formazione inclusa</strong> con ogni progetto. Puoi aggiornare testi, foto e prezzi in autonomia. Siamo sempre disponibili per supporto tecnico tramite il nostro piano di manutenzione.",
+  },
+  {
+    q: "Cosa include un pacchetto social media?",
+    a: "I nostri pacchetti social includono: strategia editoriale mensile, <strong>creazione dei contenuti visivi</strong> (foto, grafiche, reel), copywriting in italiano e inglese, pubblicazione programmata e report delle performance. Non gestiamo solo la presenza: costruiamo un'identità.",
+  },
+  {
+    q: "Lavorate anche con clienti fuori dalla Calabria?",
+    a: "Sì. Lavoriamo con clienti in tutta Italia e all'estero — principalmente nel settore hospitality, immobiliare e turismo. Tutte le fasi del progetto si svolgono <strong>da remoto</strong>, con riunioni video regolari e aggiornamenti continui via piattaforma condivisa.",
+  },
+  {
+    q: "Come funziona il processo di collaborazione?",
+    a: "Il nostro processo si articola in 4 fasi: <strong>Consulenza</strong> (analisi gratuita della situazione attuale), <strong>Strategia</strong> (piano personalizzato con obiettivi chiari), <strong>Esecuzione</strong> (sviluppo con revisioni incluse) e <strong>Ottimizzazione</strong> (monitoraggio post-lancio per 3 mesi).",
+  },
+  {
+    q: "Offrite garanzie sui risultati?",
+    a: "Garantiamo la qualità del lavoro consegnato e la conformità agli obiettivi concordati. Per la SEO e le campagne ads, offriamo un <strong>periodo di ottimizzazione gratuito</strong> se i KPI pattuiti non vengono raggiunti entro la timeline stabilita. La trasparenza è il nostro standard.",
+  },
+  {
+    q: "Quanto dura un contratto di collaborazione?",
+    a: "Per i servizi continuativi (social, SEO, ads) proponiamo contratti a <strong>6 o 12 mesi</strong>, con revisione trimestrale degli obiettivi. Per progetti one-shot (siti, video, branding) non ci sono vincoli temporali: si paga per il progetto completato, stop.",
+  },
+]
+
+const list = document.getElementById('faqList')
+
+DATA.forEach((item, i) => {
+  const num = String(i + 1).padStart(2, '0')
+  const el = document.createElement('div')
+  el.className = 'faq-item'
+  el.innerHTML = `
+    <button class="faq-trigger" aria-expanded="false">
+      <span class="faq-num">${num}</span>
+      <span class="faq-q">${item.q}</span>
+      <span class="faq-icon">+</span>
+    </button>
+    <div class="faq-body">
+      <div class="faq-inner">
+        <div class="faq-answer">
+          <div class="faq-answer-text">${item.a}</div>
+        </div>
+      </div>
+    </div>`
+
+  el.querySelector('.faq-trigger').addEventListener('click', () => toggle(el))
+  list.appendChild(el)
+})
+
+let openItem = null
+
+function toggle(el) {
+  if (openItem && openItem !== el) {
+    openItem.classList.remove('open')
+    openItem.querySelector('.faq-trigger').setAttribute('aria-expanded', 'false')
+    openItem.querySelector('.faq-icon').textContent = '+'
+  }
+  const isOpen = el.classList.contains('open')
+  el.classList.toggle('open', !isOpen)
+  el.querySelector('.faq-trigger').setAttribute('aria-expanded', String(!isOpen))
+  el.querySelector('.faq-icon').textContent = isOpen ? '+' : '+'
+  openItem = isOpen ? null : el
+}
+
+// Scroll reveal stagger
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible')
+      io.unobserve(e.target)
+    }
+  })
+}, { threshold:0.1, rootMargin:'0px 0px -40px 0px' })
+
+document.querySelectorAll('.faq-item').forEach((el, i) => {
+  el.style.transitionDelay = (i * 0.06) + 's'
+  io.observe(el)
+})
+</script>
+</body>
+</html>

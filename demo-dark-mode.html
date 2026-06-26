@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Day · Night Mode · Digital Evolution Italy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── TOKENS ──────────────────────────────────────────────── */
+:root{
+  --serif:Georgia,'Times New Roman',serif;
+  --mono:'Courier New',monospace;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --t:.55s; /* transition speed */
+}
+
+/* DARK */
+[data-theme="dark"]{
+  --bg:       #050d18;
+  --surface:  #0c1a2e;
+  --card:     #0f2035;
+  --border:   rgba(201,169,97,0.18);
+  --accent:   #c9a961;
+  --accent2:  rgba(201,169,97,0.65);
+  --text:     #f5f1e8;
+  --text2:    rgba(245,241,232,0.58);
+  --text3:    rgba(245,241,232,0.32);
+  --tag-bg:   rgba(201,169,97,0.1);
+  --tag-c:    #c9a961;
+  --btn-bg:   #c9a961;
+  --btn-c:    #050d18;
+  --shadow:   0 8px 40px rgba(0,0,0,.55);
+  --nav-bg:   rgba(5,13,24,0.92);
+  --hero-bg:  radial-gradient(ellipse at 30% 60%,rgba(26,80,200,.12),transparent 60%),
+              radial-gradient(ellipse at 70% 30%,rgba(140,80,5,.14),transparent 55%),
+              #050d18;
+}
+
+/* LIGHT */
+[data-theme="light"]{
+  --bg:       #f5efe6;
+  --surface:  #ede5d8;
+  --card:     #ffffff;
+  --border:   rgba(160,120,60,0.18);
+  --accent:   #9a6f2a;
+  --accent2:  rgba(154,111,42,0.7);
+  --text:     #1a1208;
+  --text2:    rgba(26,18,8,0.58);
+  --text3:    rgba(26,18,8,0.32);
+  --tag-bg:   rgba(154,111,42,0.1);
+  --tag-c:    #9a6f2a;
+  --btn-bg:   #9a6f2a;
+  --btn-c:    #ffffff;
+  --shadow:   0 8px 40px rgba(0,0,0,.12);
+  --nav-bg:   rgba(245,239,230,0.92);
+  --hero-bg:  radial-gradient(ellipse at 30% 60%,rgba(220,180,100,.18),transparent 60%),
+              radial-gradient(ellipse at 70% 30%,rgba(200,140,60,.12),transparent 55%),
+              #f5efe6;
+}
+
+/* ── BASE ────────────────────────────────────────────────── */
+html,body{min-height:100%;font-family:var(--mono)}
+body{
+  background:var(--bg);color:var(--text);
+  transition:background var(--t) var(--ease), color var(--t) var(--ease);
+}
+
+/* ── NAV ─────────────────────────────────────────────────── */
+.nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.9rem 2rem;
+  background:var(--nav-bg);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+  transition:background var(--t) var(--ease), border-color var(--t) var(--ease);
+}
+.logo-a{font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--text)}
+.logo-b{font-size:.42rem;letter-spacing:.28em;text-transform:uppercase;color:var(--accent)}
+
+/* ── TOGGLE ──────────────────────────────────────────────── */
+.toggle-wrap{display:flex;align-items:center;gap:.7rem}
+.toggle-label{font-size:.42rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text2);
+  transition:color var(--t)}
+.toggle{
+  position:relative;width:52px;height:28px;cursor:pointer;
+}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.track{
+  position:absolute;inset:0;border-radius:14px;
+  background:var(--surface);border:1px solid var(--border);
+  transition:background var(--t) var(--ease), border-color var(--t) var(--ease);
+}
+[data-theme="dark"] .track{background:#1a3050}
+[data-theme="light"] .track{background:#e8d9c4}
+.thumb{
+  position:absolute;top:3px;left:3px;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;line-height:1;
+  transition:transform var(--t) var(--ease), background var(--t) var(--ease);
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+input:checked ~ .thumb{transform:translateX(24px)}
+
+/* ── HERO ────────────────────────────────────────────────── */
+.hero{
+  background:var(--hero-bg);
+  padding:5rem 2rem 4rem;text-align:center;
+  transition:background var(--t) var(--ease);
+}
+.hero-pre{font-size:.44rem;letter-spacing:.32em;text-transform:uppercase;color:var(--accent);margin-bottom:.8rem}
+.hero-title{
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(2.2rem,5vw,4rem);line-height:1.05;
+  color:var(--text);margin-bottom:1rem;
+  transition:color var(--t);
+}
+.hero-title em{font-style:italic;color:var(--accent)}
+.hero-line{width:36px;height:1px;background:var(--border);margin:0 auto 1rem}
+.hero-sub{font-size:.58rem;letter-spacing:.07em;color:var(--text2);max-width:480px;margin:0 auto;
+  transition:color var(--t)}
+
+/* ── GRID ────────────────────────────────────────────────── */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:1.5rem;
+  padding:3rem 2rem;
+  max-width:1100px;margin:0 auto;
+}
+
+/* ── CARD ────────────────────────────────────────────────── */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:
+    background var(--t) var(--ease),
+    border-color var(--t) var(--ease),
+    box-shadow var(--t) var(--ease),
+    transform .25s var(--ease);
+}
+.card:hover{transform:translateY(-4px)}
+.card-img{
+  width:100%;aspect-ratio:16/10;
+  object-fit:cover;display:block;
+}
+.card-body{padding:1.2rem 1.3rem 1.4rem}
+.card-brand{
+  font-size:.38rem;letter-spacing:.25em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:.5rem;transition:color var(--t);
+}
+.card-title{
+  font-family:var(--serif);font-size:1.18rem;font-weight:400;
+  color:var(--text);line-height:1.25;margin-bottom:.6rem;
+  transition:color var(--t);
+}
+.card-price-row{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.6rem}
+.card-price{font-size:.95rem;font-weight:600;color:var(--accent);transition:color var(--t)}
+.card-per{font-size:.42rem;letter-spacing:.12em;color:var(--text3);transition:color var(--t)}
+.card-desc{font-size:.54rem;letter-spacing:.04em;color:var(--text2);line-height:1.7;
+  margin-bottom:1rem;transition:color var(--t)}
+.card-tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem}
+.card-tag{
+  font-size:.38rem;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--tag-bg);color:var(--tag-c);
+  padding:.22rem .55rem;border-radius:3px;
+  border:1px solid var(--border);
+  transition:background var(--t),color var(--t),border-color var(--t);
+}
+.card-btn{
+  display:block;width:100%;padding:.6rem 1rem;
+  background:var(--btn-bg);color:var(--btn-c);
+  border:none;border-radius:6px;cursor:pointer;
+  font-family:var(--mono);font-size:.44rem;letter-spacing:.18em;text-transform:uppercase;
+  transition:background var(--t) var(--ease), color var(--t) var(--ease), opacity .2s;
+}
+.card-btn:hover{opacity:.85}
+
+/* ── FEATURE ROW ─────────────────────────────────────────── */
+.features{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--border);border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  transition:background var(--t),border-color var(--t);
+}
+.feat{
+  background:var(--surface);padding:1.6rem 1.5rem;text-align:center;
+  transition:background var(--t);
+}
+.feat-icon{font-size:1.6rem;margin-bottom:.6rem;display:block}
+.feat-title{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text);
+  margin-bottom:.3rem;transition:color var(--t)}
+.feat-desc{font-size:.5rem;letter-spacing:.04em;color:var(--text2);line-height:1.6;
+  transition:color var(--t)}
+
+/* ── TAG ─────────────────────────────────────────────────── */
+.tag{
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:200;font-size:.44rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--text2);
+  border:1px solid var(--border);padding:.28rem .55rem;
+  background:var(--nav-bg);backdrop-filter:blur(8px);
+  transition:all var(--t);
+}
+.tag span{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div>
+    <p class="logo-a">Digital Evolution</p>
+    <p class="logo-b">Italy · Day / Night</p>
+  </div>
+  <div class="toggle-wrap">
+    <span class="toggle-label" id="lbl-day">☀️ Day</span>
+    <label class="toggle">
+      <input type="checkbox" id="themeToggle"/>
+      <div class="track"></div>
+      <div class="thumb" id="thumb">🌙</div>
+    </label>
+    <span class="toggle-label" id="lbl-night">Night 🌙</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <p class="hero-pre">Hotel · Calabria · Italia</p>
+  <h1 class="hero-title">La tua struttura.<br><em>Online come merita.</em></h1>
+  <div class="hero-line"></div>
+  <p class="hero-sub">Siti web professionali per hotel, resort e strutture ricettive. Design che converte, SEO che porta ospiti.</p>
+</div>
+
+<!-- CARDS -->
+<div class="grid">
+
+  <div class="card">
+    <img class="card-img" src="img/hotel-5.jpg" alt="Suite Vista Mare"/>
+    <div class="card-body">
+      <p class="card-brand">Digital Evolution Italy</p>
+      <h2 class="card-title">Suite Vista Mare · Tropea</h2>
+      <div class="card-price-row">
+        <span class="card-price">€ 280</span>
+        <span class="card-per">/ notte</span>
+      </div>
+      <p class="card-desc">Suite panoramica con terrazza privata affacciata sul Tirreno. Colazione inclusa, servizio concierge 24h.</p>
+      <div class="card-tags">
+        <span class="card-tag">Suite</span>
+        <span class="card-tag">Vista Mare</span>
+        <span class="card-tag">Tropea</span>
+      </div>
+      <button class="card-btn">Prenota Ora</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img class="card-img" src="img/hotel-3.jpg" alt="Villa Privata"/>
+    <div class="card-body">
+      <p class="card-brand">Digital Evolution Italy</p>
+      <h2 class="card-title">Villa Privata · Scilla</h2>
+      <div class="card-price-row">
+        <span class="card-price">€ 420</span>
+        <span class="card-per">/ notte</span>
+      </div>
+      <p class="card-desc">Villa esclusiva con piscina infinity e giardino mediterraneo. Accesso diretto alla spiaggia privata.</p>
+      <div class="card-tags">
+        <span class="card-tag">Villa</span>
+        <span class="card-tag">Piscina</span>
+        <span class="card-tag">Scilla</span>
+      </div>
+      <button class="card-btn">Prenota Ora</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img class="card-img" src="img/hotel-6.jpg" alt="Resort Wellness"/>
+    <div class="card-body">
+      <p class="card-brand">Digital Evolution Italy</p>
+      <h2 class="card-title">Resort Wellness · Capo Vaticano</h2>
+      <div class="card-price-row">
+        <span class="card-price">€ 195</span>
+        <span class="card-per">/ notte</span>
+      </div>
+      <p class="card-desc">Resort 4 stelle con spa, piscine termali e ristorante gourmet. Pacchetti benessere personalizzati.</p>
+      <div class="card-tags">
+        <span class="card-tag">Resort</span>
+        <span class="card-tag">Spa</span>
+        <span class="card-tag">Gourmet</span>
+      </div>
+      <button class="card-btn">Prenota Ora</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- FEATURES -->
+<div class="features">
+  <div class="feat">
+    <span class="feat-icon">⚡</span>
+    <p class="feat-title">Velocità</p>
+    <p class="feat-desc">Siti ottimizzati Core Web Vitals. Caricamento in meno di 1 secondo.</p>
+  </div>
+  <div class="feat">
+    <span class="feat-icon">📱</span>
+    <p class="feat-title">Mobile First</p>
+    <p class="feat-desc">Design responsivo perfetto su ogni dispositivo, dal telefono al desktop.</p>
+  </div>
+  <div class="feat">
+    <span class="feat-icon">🔍</span>
+    <p class="feat-title">SEO Locale</p>
+    <p class="feat-desc">Ottimizzazione per ricerche locali. I tuoi ospiti ti trovano su Google.</p>
+  </div>
+</div>
+
+<div class="tag">Effetto: <span>Day / Night Mode</span> · Digital Evolution Italy</div>
+
+<script>
+const toggle = document.getElementById('themeToggle')
+const thumb  = document.getElementById('thumb')
+const root   = document.documentElement
+
+// init: dark mode on load (checkbox unchecked = dark)
+function applyTheme(dark) {
+  root.setAttribute('data-theme', dark ? 'dark' : 'light')
+  thumb.textContent = dark ? '🌙' : '☀️'
+}
+
+toggle.addEventListener('change', () => {
+  // checked = light mode (sun), unchecked = dark (moon)
+  applyTheme(!toggle.checked)
+  localStorage.setItem('dei-theme', toggle.checked ? 'light' : 'dark')
+})
+
+// restore saved preference
+const saved = localStorage.getItem('dei-theme')
+if (saved === 'light') {
+  toggle.checked = true
+  applyTheme(false)
+} else {
+  applyTheme(true)
+}
+</script>
+</body>
+</html>

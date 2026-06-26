@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Food Slider · Digital Evolution Italy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --serif:Georgia,'Times New Roman',serif;
+  --mono:'Courier New',monospace;
+  --t:.7s;--ease:cubic-bezier(0.76,0,0.24,1);
+}
+html,body{height:100%;overflow:hidden;font-family:var(--mono);
+  background:#c8a87a;transition:background-color .85s ease}
+
+/* NAV */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  padding:1.2rem 2.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo-a{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(0,0,0,.55)}
+.logo-b{font-size:.39rem;letter-spacing:.24em;text-transform:uppercase;color:rgba(0,0,0,.38)}
+.nav-num{font-size:.46rem;letter-spacing:.14em;color:rgba(0,0,0,.45)}
+
+/* LAYOUT */
+.stage{position:fixed;inset:0;display:grid;grid-template-columns:45% 55%}
+
+/* ── LEFT: TEXT ──────────────────────────────────────────── */
+.left{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:5rem 3rem 4rem 3.5rem;
+  gap:1.4rem;z-index:2;
+}
+.slide-tag{font-size:.44rem;letter-spacing:.3em;text-transform:uppercase;
+  color:rgba(0,0,0,.6);overflow:hidden;height:1.2em}
+.slide-tag span{display:block;transition:transform var(--t) var(--ease),opacity .45s}
+
+.title-el{font-family:var(--serif);font-weight:400;
+  font-size:clamp(3.2rem,8vw,6.5rem);line-height:.9;letter-spacing:-.025em;
+  color:rgba(0,0,0,.82)}
+.title-line{display:block;height:1.05em;overflow:hidden}
+.title-line span{display:inline-block;transition:transform var(--t) var(--ease),opacity .38s}
+
+.rule{width:40px;height:1.5px;background:rgba(0,0,0,.35)}
+
+.slide-desc{font-family:var(--serif);font-size:.82rem;letter-spacing:.01em;
+  color:rgba(0,0,0,.82);line-height:1.75;max-width:360px;overflow:hidden;font-weight:400}
+.slide-desc span{display:block;transition:transform var(--t) var(--ease),opacity .5s}
+
+.slide-meta{font-size:.46rem;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(0,0,0,.55);overflow:hidden}
+.slide-meta span{display:block;transition:transform var(--t) var(--ease),opacity .4s}
+
+.hint{font-size:.39rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(0,0,0,.28)}
+
+/* ── RIGHT: VERTICAL PHOTO STACK ─────────────────────────── */
+.right{position:relative;overflow:hidden;height:100vh}
+
+/* cards use absolute positioning — center of panel is anchor */
+.card{
+  position:absolute;
+  left:50%;
+  /* top 50% + custom Y + center the card itself */
+  transform:translate(-50%, calc(-50% + var(--cy, 0px)));
+  top:50%;
+  border-radius:10px;overflow:hidden;cursor:pointer;
+  transition:
+    width var(--t) var(--ease),
+    height var(--t) var(--ease),
+    transform var(--t) var(--ease),
+    opacity var(--t) ease,
+    filter var(--t) ease,
+    box-shadow var(--t) ease;
+  will-change:transform,width,height,filter;
+}
+.card img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+
+/* size + appearance by state */
+.card[data-state="active"]{
+  width:600px;height:450px;opacity:1;
+  filter:saturate(1) brightness(1);
+  box-shadow:0 28px 72px rgba(0,0,0,.32);z-index:5}
+.card[data-state="n1"]{
+  width:265px;height:199px;opacity:.68;
+  filter:saturate(0.18) brightness(0.84);
+  box-shadow:0 8px 22px rgba(0,0,0,.14);z-index:4}
+.card[data-state="n2"]{
+  width:175px;height:131px;opacity:.4;
+  filter:saturate(0) brightness(0.76);
+  box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:3}
+
+/* footer tag */
+.tag{position:fixed;bottom:1.3rem;left:50%;transform:translateX(-50%);z-index:50;
+  font-size:.38rem;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(0,0,0,.3);border:1px solid rgba(0,0,0,.1);
+  padding:.22rem .46rem;background:rgba(255,255,255,.2);backdrop-filter:blur(8px);
+  border-radius:2px;white-space:nowrap}
+.tag em{color:rgba(0,0,0,.5);font-style:normal}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div><p class="logo-a">Digital Evolution</p><p class="logo-b">Italy · Food Slider</p></div>
+  <div class="nav-num" id="navNum">01 / 05</div>
+</nav>
+
+<div class="stage">
+  <div class="left">
+    <div class="slide-tag"><span id="tagTxt">Primo · Tradizione</span></div>
+    <h1 class="title-el" id="titleEl"></h1>
+    <div class="rule"></div>
+    <div class="slide-desc"><span id="descTxt">Spaghetti freschi con salsa di pomodori datterino raccolti al mattino, basilico del nostro orto, olio extravergine DOP Calabria.</span></div>
+    <div class="slide-meta"><span id="metaTxt">Stagionale · Vegetariano · Calabria DOP</span></div>
+    <div class="hint">↑ ↓ scorri · clicca la foto</div>
+  </div>
+
+  <div class="right" id="right">
+    <div class="card" id="c0"><img src="img/food/food-1.jpg" alt=""/></div>
+    <div class="card" id="c1"><img src="img/food/food-2.jpg" alt=""/></div>
+    <div class="card" id="c2"><img src="img/food/food-3.jpg" alt=""/></div>
+    <div class="card" id="c3"><img src="img/food/food-4.jpg" alt=""/></div>
+    <div class="card" id="c4"><img src="img/food/food-5.jpg" alt=""/></div>
+  </div>
+</div>
+
+<div class="tag">Effetto: <em>Food Slider</em> · Digital Evolution Italy</div>
+<canvas id="cc" width="40" height="30" style="display:none"></canvas>
+
+<script>
+const SLIDES = [
+  { tag:'Primo · Tradizione',   title:'Spaghetti',
+    desc:'Spaghetti freschi con salsa di pomodori datterino raccolti al mattino, basilico del nostro orto, olio extravergine DOP Calabria.',
+    meta:'Stagionale · Vegetariano · Calabria DOP' },
+  { tag:'Antipasto · Calabrese',title:'Antipasto',
+    desc:'\'Nduja di Spilinga, burrata fresca, olive schiacciate, peperoni rossi arrostiti. Il benvenuto della nostra cucina sul tagliere di ulivo.',
+    meta:'\'Nduja · Burrata · Peperoni DOP' },
+  { tag:'Primo · Fatto a Mano', title:'Fileja',
+    desc:'Pasta tradizionale calabrese lavorata a mano, condita con ragù di maiale nero di Calabria cotto per cinque ore a fuoco lento.',
+    meta:'Pasta Fresca · Maiale Nero · Slow Food' },
+  { tag:'Secondo · Dal Mare',   title:'Pesce Spada',
+    desc:'Pesce spada dello Stretto alla ghiotta: capperi di Tropea, olive taggiasche, pomodorini confit, origano selvatico di montagna.',
+    meta:'Pescato Locale · Senza Glutine · Stretto di Messina' },
+  { tag:'Dolce · Tradizione',   title:'Pitta',
+    desc:'Dolce natalizio calabrese: pasta frolla ripiena di noci, fichi secchi, miele di zagara e spezie aromatiche di antichissima origine.',
+    meta:'Ricetta del 1800 · Artigianale · Presidio Slow Food' },
+]
+
+// Card size constants (must match CSS)
+const SZ = { active:{h:450}, n1:{h:199}, n2:{h:131} }
+const GAP = 20
+const N = SLIDES.length
+let cur = 0, busy = false
+
+const cards   = [0,1,2,3,4].map(i => document.getElementById('c'+i))
+const titleEl = document.getElementById('titleEl')
+const tagEl   = document.getElementById('tagTxt')
+const descEl  = document.getElementById('descTxt')
+const metaEl  = document.getElementById('metaTxt')
+const navNum  = document.getElementById('navNum')
+const cc      = document.getElementById('cc')
+const ctx2    = cc.getContext('2d', {willReadFrequently:true})
+
+// ── Compute Y offset for each card relative to active center
+function cardY(cardIdx, activeIdx) {
+  if (cardIdx === activeIdx) return 0
+  const sign = cardIdx > activeIdx ? 1 : -1
+  let y = 0
+  // walk from active toward cardIdx, accumulating half-heights + gap
+  let prev = activeIdx
+  let step = activeIdx + sign
+  while (prev !== cardIdx) {
+    const prevState = stateOf(prev, activeIdx)
+    const stepState = stateOf(step, activeIdx)
+    y += sign * (SZ[prevState].h / 2 + GAP + SZ[stepState].h / 2)
+    prev = step
+    step += sign
+  }
+  return y
+}
+
+function stateOf(cardIdx, activeIdx) {
+  const d = Math.abs(cardIdx - activeIdx)
+  return d === 0 ? 'active' : d === 1 ? 'n1' : 'n2'
+}
+
+// Apply positions + states to all cards
+function layoutCards(activeIdx) {
+  cards.forEach((c, i) => {
+    const state = stateOf(i, activeIdx)
+    const y     = cardY(i, activeIdx)
+    c.dataset.state = state
+    c.style.setProperty('--cy', y + 'px')
+    c.style.zIndex = state === 'active' ? 5 : state === 'n1' ? 4 : 3
+  })
+}
+
+// ── Background color from canvas
+function setBg(imgEl) {
+  const apply = () => {
+    try {
+      ctx2.drawImage(imgEl, 0, 0, 40, 30)
+      const d = ctx2.getImageData(0,0,40,30).data
+      let r=0,g=0,b=0,n=0
+      for(let i=0;i<d.length;i+=16){ r+=d[i];g+=d[i+1];b+=d[i+2];n++ }
+      r=Math.round(r/n*.55+255*.45)
+      g=Math.round(g/n*.55+255*.45)
+      b=Math.round(b/n*.55+255*.45)
+      document.body.style.backgroundColor=`rgb(${r},${g},${b})`
+    } catch(e){}
+  }
+  imgEl.complete && imgEl.naturalWidth ? apply() : imgEl.addEventListener('load',apply,{once:true})
+}
+
+// ── Title char animation — one .title-line per WORD (chars inline)
+function buildTitle(text, dir) {
+  titleEl.innerHTML = ''
+  text.split(' ').forEach(word => {
+    const line = document.createElement('span'); line.className = 'title-line'
+    ;[...word].forEach(ch => {
+      const s = document.createElement('span')
+      s.textContent = ch
+      s.style.cssText = `transform:translateY(${dir==='next'?'105%':'-105%'});opacity:0`
+      line.appendChild(s)
+    })
+    titleEl.appendChild(line)
+  })
+  titleEl.querySelectorAll('.title-line span').forEach((s,i) =>
+    setTimeout(() => { s.style.transform='translateY(0)'; s.style.opacity='1' }, i*44+85))
+}
+function exitTitle(dir) {
+  titleEl.querySelectorAll('.title-line span').forEach((s,i) =>
+    setTimeout(() => {
+      s.style.transform=`translateY(${dir==='next'?'-105%':'105%'})`; s.style.opacity='0'
+    }, i*26))
+}
+function slideText(el, val, dir, delay) {
+  el.style.transform=`translateY(${dir==='next'?'-100%':'100%'})`; el.style.opacity='0'
+  setTimeout(()=>{
+    el.textContent=val; el.style.transition='none'
+    el.style.transform=`translateY(${dir==='next'?'100%':'-100%'})`; el.style.opacity='0'
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      el.style.transition=''; el.style.transform='translateY(0)'; el.style.opacity='1'
+    }))
+  }, 250+delay)
+}
+
+// ── goTo
+function goTo(idx) {
+  idx = ((idx%N)+N)%N
+  if (busy || idx===cur) return
+  busy = true
+  const dir = idx > cur ? 'next' : 'prev'
+  const s = SLIDES[idx]
+
+  layoutCards(idx)
+  setBg(cards[idx].querySelector('img'))
+  exitTitle(dir)
+  slideText(tagEl,  s.tag,  dir, 0)
+  slideText(descEl, s.desc, dir, 40)
+  slideText(metaEl, s.meta, dir, 80)
+
+  setTimeout(()=>{
+    buildTitle(s.title, dir)
+    cur = idx
+    navNum.textContent = `0${idx+1} / 0${N}`
+    busy = false
+  }, 230)
+}
+
+// ── Init
+layoutCards(0)
+buildTitle(SLIDES[0].title, 'next')
+setTimeout(() => setBg(cards[0].querySelector('img')), 150)
+
+// ── Events
+cards.forEach((c,i) => c.addEventListener('click', () => goTo(i)))
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowDown'||e.key==='ArrowRight') goTo(cur+1)
+  if (e.key==='ArrowUp'  ||e.key==='ArrowLeft')  goTo(cur-1)
+})
+
+let wLock = false
+document.addEventListener('wheel', e => {
+  if (wLock) return
+  if (Math.abs(e.deltaY) < 20) return   // ignore trackpad inertia
+  wLock = true
+  goTo(e.deltaY > 0 ? cur+1 : cur-1)
+  setTimeout(() => { wLock = false }, 1000)
+}, {passive:true})
+
+let sx = 0
+document.addEventListener('touchstart', e => { sx = e.touches[0].clientY }, {passive:true})
+document.addEventListener('touchend',   e => {
+  const dy = sx - e.changedTouches[0].clientY
+  if (Math.abs(dy) > 40) goTo(dy > 0 ? cur+1 : cur-1)
+}, {passive:true})
+</script>
+</body>
+</html>

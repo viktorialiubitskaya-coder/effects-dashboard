@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Liquid Gradient · Digital Evolution Italy</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --oro:#c9a961;--oro-dim:rgba(201,169,97,0.4);
+    --text:#fff;--dim:rgba(255,255,255,0.6);--muted:rgba(255,255,255,0.25);
+    --serif:Georgia,'Times New Roman',serif;--mono:'Courier New',monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  html,body{height:100%;background:#0a0e0c;overflow:hidden;font-family:var(--mono);color:var(--text)}
+  #c{position:fixed;inset:0;z-index:0;width:100%;height:100%;display:block}
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.06;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .floating{position:fixed;z-index:10;top:50%;left:50%;
+    transform:translate(-50%,-50%);text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:1rem;
+    pointer-events:none;will-change:transform;mix-blend-mode:hard-light}
+  .f-pre{font-size:.5rem;letter-spacing:.4em;text-transform:uppercase;color:#fff;
+    opacity:0;animation:fu .8s .4s var(--ease) forwards}
+  .f-title{font-family:var(--serif);font-weight:300;font-size:clamp(2.8rem,7vw,5.6rem);
+    line-height:.95;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.35);
+    opacity:0;animation:fu .9s .55s var(--ease) forwards}
+  .f-title em{font-style:italic}
+  .f-line{width:40px;height:1px;background:rgba(255,255,255,.55);
+    opacity:0;animation:fu .7s .75s var(--ease) forwards}
+  .f-sub{font-size:.6rem;letter-spacing:.12em;color:rgba(255,255,255,.85);max-width:24rem;line-height:1.7;
+    opacity:0;animation:fu .7s .85s var(--ease) forwards}
+  @keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .nav{position:fixed;top:0;left:0;right:0;z-index:20;padding:1.3rem 2rem;
+    display:flex;justify-content:space-between;
+    background:linear-gradient(to bottom,rgba(0,0,0,.18),transparent);pointer-events:none;
+    mix-blend-mode:hard-light}
+  .logo-a{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase}
+  .logo-b{font-size:.46rem;letter-spacing:.28em;text-transform:uppercase;color:#fff;opacity:.75}
+  .hint{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:20;
+    font-size:.46rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.7);
+    animation:pulse 3s ease-in-out infinite;pointer-events:none;mix-blend-mode:hard-light}
+  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:.9}}
+  .tag{position:fixed;bottom:1.5rem;right:1.5rem;z-index:50;font-size:.44rem;
+    letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.75);
+    border:1px solid rgba(255,255,255,.25);padding:.28rem .55rem;border-radius:2px;
+    backdrop-filter:blur(4px)}
+  .palette{position:fixed;top:1.4rem;left:50%;transform:translateX(-50%);z-index:30;
+    display:flex;gap:.4rem;pointer-events:auto}
+  .sw{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.5);cursor:pointer;
+    transition:transform .25s var(--ease),border-color .25s;will-change:transform}
+  .sw:hover{transform:scale(1.18)}
+  .sw.active{border-color:#fff;transform:scale(1.12)}
+  @media(max-width:640px){.nav{padding:1rem 1.2rem}.palette{top:auto;bottom:4.5rem}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="grain"></div>
+
+<div class="nav">
+  <div class="logo-a">Digital Evolution</div>
+  <div class="logo-b">Liquid Gradient</div>
+</div>
+
+<div class="palette" id="palette"></div>
+
+<div class="floating" id="float">
+  <div class="f-pre">Three.js · WebGL Shader</div>
+  <h1 class="f-title"><em>Liquid</em> Gradient</h1>
+  <div class="f-line"></div>
+  <div class="f-sub">Sfondo fluido generato in tempo reale. Muovi il mouse: il colore si deforma e scorre attorno al cursore.</div>
+</div>
+
+<div class="hint">Muovi il mouse — cambia palette in alto</div>
+<div class="tag">Effetto · WebGL</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.Camera();
+
+// ── palettes (4 colori ciascuna, ordinati scuro→chiaro) ──
+const PALETTES = [
+  // Sunset agrumi (come reel)
+  [[0.08,0.22,0.20],[0.85,0.30,0.05],[0.95,0.62,0.10],[0.55,0.80,0.55]],
+  // Notte & Oro (brand DEI)
+  [[0.02,0.04,0.08],[0.20,0.16,0.35],[0.79,0.66,0.38],[0.97,0.93,0.82]],
+  // Mare & Smeraldo
+  [[0.01,0.10,0.16],[0.02,0.42,0.45],[0.10,0.72,0.62],[0.70,0.95,0.82]],
+  // Rosa neon
+  [[0.10,0.02,0.14],[0.55,0.06,0.42],[0.96,0.22,0.55],[1.00,0.72,0.45]],
+];
+let palIndex = 0;
+
+const uniforms = {
+  uTime:   { value: 0 },
+  uRes:    { value: new THREE.Vector2() },
+  uMouse:  { value: new THREE.Vector2(0.5,0.5) },   // smoothed
+  uMVel:   { value: 0 },                            // mouse speed → warp boost
+  uC0: { value: new THREE.Color() },
+  uC1: { value: new THREE.Color() },
+  uC2: { value: new THREE.Color() },
+  uC3: { value: new THREE.Color() },
+  uMix: { value: 1 },                               // 0→1 transizione palette
+};
+function setPalette(i, instant){
+  const p = PALETTES[i];
+  uniforms.uC0.value.setRGB(...p[0]);
+  uniforms.uC1.value.setRGB(...p[1]);
+  uniforms.uC2.value.setRGB(...p[2]);
+  uniforms.uC3.value.setRGB(...p[3]);
+  uniforms.uMix.value = instant ? 1 : 0;
+}
+setPalette(0, true);
+
+const material = new THREE.ShaderMaterial({
+  uniforms,
+  vertexShader: `
+    void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }
+  `,
+  fragmentShader: `
+    precision highp float;
+    uniform float uTime; uniform vec2 uRes; uniform vec2 uMouse; uniform float uMVel;
+    uniform vec3 uC0,uC1,uC2,uC3; uniform float uMix;
+
+    // simplex noise (Ashima)
+    vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+    vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
+    vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}
+    float snoise(vec2 v){
+      const vec4 C=vec4(0.211324865,0.366025403,-0.577350269,0.024390243);
+      vec2 i=floor(v+dot(v,C.yy));
+      vec2 x0=v-i+dot(i,C.xx);
+      vec2 i1=(x0.x>x0.y)?vec2(1.0,0.0):vec2(0.0,1.0);
+      vec4 x12=x0.xyxy+C.xxzz; x12.xy-=i1;
+      i=mod289(i);
+      vec3 p=permute(permute(i.y+vec3(0.0,i1.y,1.0))+i.x+vec3(0.0,i1.x,1.0));
+      vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.0);
+      m=m*m; m=m*m;
+      vec3 x=2.0*fract(p*C.www)-1.0;
+      vec3 h=abs(x)-0.5; vec3 ox=floor(x+0.5); vec3 a0=x-ox;
+      m*=1.79284291-0.85373472*(a0*a0+h*h);
+      vec3 g; g.x=a0.x*x0.x+h.x*x0.y; g.yz=a0.yz*x12.xz+h.yz*x12.yw;
+      return 130.0*dot(m,g);
+    }
+    float fbm(vec2 p){
+      float s=0.0,a=0.55;
+      for(int i=0;i<4;i++){ s+=a*snoise(p); p*=1.9; a*=0.5; }
+      return s;
+    }
+
+    void main(){
+      vec2 uv = gl_FragCoord.xy / uRes;
+      vec2 p = uv; p.x *= uRes.x/uRes.y;          // aspect-correct
+      float t = uTime*0.06;
+
+      // attrazione verso il cursore → warp locale
+      vec2 m = uMouse; m.x *= uRes.x/uRes.y;
+      float d = distance(p,m);
+      float pull = exp(-d*d*2.2) * (0.45 + uMVel*2.2);
+
+      // domain warp morbido (bassa frequenza → grandi macchie fluide)
+      float sc = 0.55;
+      vec2 q = vec2( fbm(p*sc + t),
+                     fbm(p*sc + vec2(5.2,1.3) - t) );
+      vec2 r = vec2( fbm(p*sc + 1.4*q + vec2(1.7,9.2) + t*1.2),
+                     fbm(p*sc + 1.4*q + vec2(8.3,2.8) - t*1.0) );
+      r += (m - p) * pull * 1.6;                    // spinta verso il mouse
+
+      // campo colore: gradiente diagonale di base + ondulazione noise
+      float base = dot(uv, vec2(0.55,0.65));        // sfumatura morbida di fondo
+      float f = base + 0.6*r.x + 0.18*q.y;
+      f = clamp(f, 0.0, 1.0);
+
+      // gradiente a 4 stop, transizioni larghe = soft
+      vec3 col = mix(uC0, uC1, smoothstep(0.0,0.5,f));
+      col = mix(col, uC2, smoothstep(0.3,0.8,f));
+      col = mix(col, uC3, smoothstep(0.62,1.05,f));
+      col += pull * 0.10;                            // bagliore sul cursore
+
+      // vignette morbida
+      float vig = smoothstep(1.3,0.4,distance(uv,vec2(0.5)));
+      col *= 0.85 + 0.15*vig;
+
+      gl_FragColor = vec4(pow(col, vec3(0.95)), 1.0);
+    }
+  `
+});
+
+scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2), material));
+
+// ── interazione mouse (smoothed + velocity) ──
+const target = new THREE.Vector2(0.5,0.5);
+let lastMx=0.5,lastMy=0.5,vel=0;
+function pointer(x,y){
+  target.set(x/window.innerWidth, 1.0 - y/window.innerHeight);
+}
+window.addEventListener('pointermove', e=>pointer(e.clientX,e.clientY));
+window.addEventListener('touchmove', e=>{ if(e.touches[0]) pointer(e.touches[0].clientX,e.touches[0].clientY); }, {passive:true});
+
+// parallax titolo
+const floatEl = document.getElementById('float');
+window.addEventListener('pointermove', e=>{
+  const dx=(e.clientX/window.innerWidth-0.5), dy=(e.clientY/window.innerHeight-0.5);
+  floatEl.style.transform=`translate(calc(-50% + ${dx*-22}px), calc(-50% + ${dy*-22}px))`;
+});
+
+// ── swatches palette ──
+const palWrap = document.getElementById('palette');
+let targetCols=[uniforms.uC0,uniforms.uC1,uniforms.uC2,uniforms.uC3].map(u=>u.value.clone());
+PALETTES.forEach((p,i)=>{
+  const b=document.createElement('button');
+  b.className='sw'+(i===0?' active':'');
+  const hex=c=>'#'+c.map(v=>('0'+Math.round(v*255).toString(16)).slice(-2)).join('');
+  b.style.background=`linear-gradient(135deg, ${hex(p[1])}, ${hex(p[2])}, ${hex(p[3])})`;
+  b.onclick=()=>{
+    palIndex=i;
+    document.querySelectorAll('.sw').forEach(s=>s.classList.remove('active'));
+    b.classList.add('active');
+    const pp=PALETTES[i];
+    targetCols=[pp[0],pp[1],pp[2],pp[3]].map(c=>new THREE.Color().setRGB(...c));
+  };
+  palWrap.appendChild(b);
+});
+
+function resize(){
+  const w=window.innerWidth,h=window.innerHeight;
+  renderer.setSize(w,h);
+  uniforms.uRes.value.set(w*renderer.getPixelRatio(), h*renderer.getPixelRatio());
+}
+window.addEventListener('resize',resize); resize();
+
+const clock=new THREE.Clock();
+function loop(){
+  requestAnimationFrame(loop);
+  uniforms.uTime.value += clock.getDelta();
+  // smooth mouse + velocity
+  uniforms.uMouse.value.lerp(target,0.06);
+  vel = vel*0.9 + Math.hypot(target.x-lastMx,target.y-lastMy)*0.1;
+  lastMx=target.x; lastMy=target.y;
+  uniforms.uMVel.value += (Math.min(vel*8,1) - uniforms.uMVel.value)*0.1;
+  // lerp colori palette (transizione morbida)
+  uniforms.uC0.value.lerp(targetCols[0],0.05);
+  uniforms.uC1.value.lerp(targetCols[1],0.05);
+  uniforms.uC2.value.lerp(targetCols[2],0.05);
+  uniforms.uC3.value.lerp(targetCols[3],0.05);
+  renderer.render(scene,camera);
+}
+loop();
+</script>
+</body>
+</html>

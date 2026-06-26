@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Wedding Carousel · Digital Evolution Italy</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Barlow:wght@400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#eeebe5;
+  --text:#1a1a1a;
+  --mono:'Courier New',monospace;
+  --serif:'Playfair Display',Georgia,serif;
+  --spring:cubic-bezier(0.34,1.56,0.64,1);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--mono)}
+
+/* Page layout */
+.page{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:2rem 1rem 1.5rem;gap:1.8rem;
+}
+
+/* Header */
+.pre-tag{font-size:.42rem;letter-spacing:.32em;text-transform:uppercase;color:rgba(0,0,0,.4);margin-bottom:.5rem;text-align:center}
+.main-title{font-family:var(--serif);font-size:clamp(2.2rem,5vw,3.8rem);font-weight:700;color:var(--text);line-height:1;text-align:center}
+
+/* Carousel */
+.carousel-wrap{
+  position:relative;width:min(900px,100%);height:440px;flex-shrink:0;
+}
+.photo-card{
+  position:absolute;top:50%;left:50%;
+  width:240px;height:240px;
+  border-radius:14px;overflow:hidden;
+  cursor:pointer;
+  box-shadow:0 6px 24px rgba(0,0,0,.1);
+  transition:transform .7s var(--spring), opacity .55s ease, box-shadow .45s ease;
+  will-change:transform,opacity;
+}
+.photo-card img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.photo-card.is-active{box-shadow:0 22px 60px rgba(0,0,0,.22)}
+.photo-card:hover:not(.is-active){filter:brightness(1.06)}
+
+/* Label on active card (bottom overlay) */
+.card-label{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:.5rem .7rem;
+  background:linear-gradient(to top,rgba(0,0,0,.75),transparent);
+  font-family:var(--mono);font-size:.38rem;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.9);
+  opacity:0;transition:opacity .4s;
+}
+.photo-card.is-active .card-label{opacity:1}
+
+/* Navigation */
+.nav{display:flex;align-items:center;gap:.9rem}
+.nav-btn{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid rgba(0,0,0,.15);background:rgba(255,255,255,.75);
+  color:rgba(0,0,0,.55);font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,border-color .2s,transform .15s;
+  backdrop-filter:blur(6px);
+}
+.nav-btn:hover{background:#fff;border-color:rgba(0,0,0,.3);transform:scale(1.08)}
+.nav-btn:active{transform:scale(.95)}
+.dots{display:flex;gap:5px;align-items:center}
+.dot{
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(0,0,0,.2);cursor:pointer;
+  transition:width .35s,border-radius .35s,background .35s;
+}
+.dot.active{width:20px;border-radius:3px;background:rgba(0,0,0,.6)}
+.dot:hover:not(.active){background:rgba(0,0,0,.35)}
+
+/* Footer tag */
+.footer-tag{
+  position:fixed;bottom:1rem;right:1.5rem;z-index:20;
+  font-size:.36rem;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(0,0,0,.28);border:1px solid rgba(0,0,0,.1);
+  padding:.2rem .44rem;border-radius:2px;
+}
+.footer-tag em{color:rgba(0,0,0,.45);font-style:normal}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div>
+    <p class="pre-tag">Fotografia · Matrimoni in Calabria</p>
+    <h1 class="main-title">Il Tuo Giorno Perfetto</h1>
+  </div>
+
+  <div class="carousel-wrap" id="carouselWrap"></div>
+
+  <div class="nav">
+    <button class="nav-btn" id="prevBtn">←</button>
+    <div class="dots" id="dotsEl"></div>
+    <button class="nav-btn" id="nextBtn">→</button>
+  </div>
+</div>
+
+<div class="footer-tag">Effetto: <em>Diagonal Carousel</em> · Wedding Photography · Digital Evolution Italy</div>
+
+<script>
+const SLIDES = [
+  { img:'img/wedding/w-1.jpg', label:'Cerimonia' },
+  { img:'img/wedding/w-2.jpg', label:'Ritratto degli Sposi' },
+  { img:'img/wedding/w-3.jpg', label:'Ricevimento' },
+  { img:'img/wedding/w-4.jpg', label:'Primo Ballo' },
+  { img:'img/wedding/w-5.jpg', label:'Vista sul Mare' },
+  { img:'img/wedding/w-6.jpg', label:'Fedi Nuziali' },
+]
+
+const N = SLIDES.length
+// Layout constants
+const STEP_X  = 162   // px per step along X
+const STEP_Y  = 84    // px per step along Y
+const SCALE_STEP = 0.16 // scale decrease per step from active
+const ROT_STEP   = 8  // degrees rotation per step
+
+let cur = 2  // start in the middle
+
+const wrap  = document.getElementById('carouselWrap')
+const dotsEl= document.getElementById('dotsEl')
+
+// Build cards
+SLIDES.forEach((s,i) => {
+  const c = document.createElement('div')
+  c.className = 'photo-card'
+  c.innerHTML = `<img src="${s.img}" loading="eager" alt="${s.label}"/>
+                 <span class="card-label">${s.label}</span>`
+  c.addEventListener('click', () => goTo(i))
+  wrap.appendChild(c)
+})
+const cards = [...wrap.querySelectorAll('.photo-card')]
+
+// Build dots
+SLIDES.forEach((_,i) => {
+  const d = document.createElement('div')
+  d.className = 'dot'
+  d.addEventListener('click', () => goTo(i))
+  dotsEl.appendChild(d)
+})
+const dotEls = [...dotsEl.querySelectorAll('.dot')]
+
+document.getElementById('prevBtn').addEventListener('click', () => goTo(cur-1))
+document.getElementById('nextBtn').addEventListener('click', () => goTo(cur+1))
+
+function positionCards(activeIdx) {
+  cards.forEach((card, i) => {
+    const d    = i - activeIdx
+    const absD = Math.abs(d)
+    const x     = d * STEP_X
+    const y     = d * STEP_Y
+    const scale = Math.max(0.35, 1 - absD * SCALE_STEP)
+    const rotate= -d * ROT_STEP   // left→clockwise (+), right→counter (-)
+    const z     = N - absD
+    const opacity = absD > 3 ? 0 : absD === 3 ? 0.4 : 1
+
+    card.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale}) rotate(${rotate}deg)`
+    card.style.zIndex    = z
+    card.style.opacity   = opacity
+    card.classList.toggle('is-active', i === activeIdx)
+  })
+  dotEls.forEach((d,i) => d.classList.toggle('active', i === activeIdx))
+}
+
+function goTo(idx) {
+  if (idx < 0 || idx >= N) return
+  cur = idx
+  positionCards(cur)
+}
+
+// Init — appear from center
+cards.forEach(c => {
+  c.style.transition = 'none'
+  c.style.transform  = 'translate(-50%,-50%) scale(.6)'
+  c.style.opacity    = '0'
+})
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  cards.forEach(c => { c.style.transition = '' })
+  positionCards(cur)
+}))
+
+// Preload
+SLIDES.forEach(s => { const img = new Image(); img.src = s.img })
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowLeft')  goTo(cur-1)
+  if (e.key==='ArrowRight') goTo(cur+1)
+})
+
+// Wheel
+let wLock = false
+document.addEventListener('wheel', e => {
+  if (wLock||Math.abs(e.deltaY)<20) return
+  wLock = true
+  goTo(e.deltaY>0 ? cur+1 : cur-1)
+  setTimeout(()=>{wLock=false},650)
+},{passive:true})
+
+// Touch
+let tx=0
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true})
+document.addEventListener('touchend',e=>{
+  const dx=tx-e.changedTouches[0].clientX
+  if(Math.abs(dx)>40) goTo(dx>0?cur+1:cur-1)
+},{passive:true})
+</script>
+</body>
+</html>

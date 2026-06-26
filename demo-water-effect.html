@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Water Effect · Digital Evolution Italy</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --oro:#c9a961;--oro-dim:rgba(201,169,97,0.4);
+    --text:#f5f1e8;--dim:rgba(245,241,232,0.5);--muted:rgba(245,241,232,0.2);
+    --serif:Georgia,'Times New Roman',serif;--mono:'Courier New',monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  html,body{height:100%;background:#020a14;overflow:hidden;font-family:var(--mono);color:var(--text)}
+  #c{position:fixed;inset:0;z-index:0;width:100%;height:100%}
+  .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 20%,rgba(2,10,20,.5) 100%)}
+  .floating{position:fixed;z-index:10;top:50%;left:50%;
+    transform:translate(-50%,-50%);text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:.9rem;
+    pointer-events:none;will-change:transform}
+  .f-pre{font-size:.46rem;letter-spacing:.35em;text-transform:uppercase;color:rgba(201,169,97,1);
+    opacity:0;animation:fu .8s .4s var(--ease) forwards}
+  .f-title{font-family:var(--serif);font-weight:300;font-size:clamp(2.5rem,6vw,5rem);
+    line-height:.95;color:#fff;text-shadow:0 2px 32px rgba(0,0,0,.95),0 0 60px rgba(0,0,0,.6);
+    opacity:0;animation:fu .9s .55s var(--ease) forwards}
+  .f-title em{font-style:italic;color:var(--oro)}
+  .f-line{width:36px;height:1px;background:var(--oro-dim);
+    opacity:0;animation:fu .7s .75s var(--ease) forwards}
+  .f-sub{font-size:.56rem;letter-spacing:.1em;color:rgba(245,241,232,0.8);
+    opacity:0;animation:fu .7s .85s var(--ease) forwards}
+  .f-cta{font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;color:var(--oro);
+    border:1px solid var(--oro-dim);padding:.55rem 1.3rem;background:none;
+    font-family:var(--mono);cursor:pointer;pointer-events:auto;
+    opacity:0;animation:fu .7s 1s var(--ease) forwards}
+  .f-cta:hover{background:rgba(201,169,97,.1)}
+  @keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  .nav{position:fixed;top:0;left:0;right:0;z-index:20;padding:1.3rem 2rem;
+    display:flex;justify-content:space-between;
+    background:linear-gradient(to bottom,rgba(2,10,20,.65),transparent);pointer-events:none}
+  .logo-a{font-size:.58rem;letter-spacing:.22em;text-transform:uppercase}
+  .logo-b{font-size:.44rem;letter-spacing:.28em;text-transform:uppercase;color:var(--oro)}
+  .hint{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:20;
+    font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    animation:pulse 3s ease-in-out infinite;pointer-events:none}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.8}}
+  .tag{position:fixed;bottom:1.5rem;right:1.5rem;z-index:50;font-size:.44rem;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+    border:1px solid rgba(201,169,97,.13);padding:.28rem .55rem;
+    background:rgba(2,10,20,.85);backdrop-filter:blur(8px)}
+  .tag span{color:var(--oro)}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div class="vignette"></div>
+
+<div class="floating" id="fl">
+  <p class="f-pre">Tropea · Calabria · Estate 2025</p>
+  <h1 class="f-title">Dove il mare<br>incontra <em>l'estate.</em></h1>
+  <div class="f-line"></div>
+  <p class="f-sub">Spiaggia di Tropea · Acqua cristallina</p>
+  <button class="f-cta">Scopri →</button>
+</div>
+
+<nav class="nav">
+  <div><p class="logo-a">Digital Evolution</p><p class="logo-b">Italy · Water Effect</p></div>
+</nav>
+<p class="hint">Muovi il mouse · Clicca per increspare</p>
+<div class="tag">Effetto: <span>Water Effect</span> · Digital Evolution Italy</div>
+
+<script>
+const canvas = document.getElementById('c')
+const ctx    = canvas.getContext('2d')
+const fl     = document.getElementById('fl')
+
+// simulation resolution scale
+const S = 0.5
+const DAMP = 0.986
+const DISP = 3.5   // displacement multiplier (pixels per unit height — keep wave height ~5-20)
+
+let W, H, sw, sh
+let cur, prv           // Float32Arrays for height map
+let srcPx              // source image pixel data (Uint8ClampedArray, sw*sh*4)
+let outPx, outImg      // output imageData
+
+let mx=.5, my=.5, pmx=.5, pmy=.5
+let fx=0, fy=0
+
+// ── Load image ──────────────────────────────────────────────
+const img = new Image()
+img.onload  = setup
+img.onerror = () => { img.src = 'img/hotel-4.jpg'; img.onerror = null }
+img.src = 'img/hotel-5.jpg'
+
+function setup() {
+  resize()
+  window.addEventListener('resize', resize)
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('click', onClick)
+  document.addEventListener('touchmove', onTouch, {passive:true})
+  document.addEventListener('touchstart', onTStart, {passive:true})
+
+  // initial splashes so water moves from the start
+  let t = 200
+  for (let i = 0; i < 4; i++, t += 600) {
+    setTimeout(splash, t)
+  }
+
+  requestAnimationFrame(loop)
+}
+
+function resize() {
+  W = canvas.width  = window.innerWidth
+  H = canvas.height = window.innerHeight
+  sw = Math.ceil(W * S)
+  sh = Math.ceil(H * S)
+
+  cur = new Float32Array(sw * sh)
+  prv = new Float32Array(sw * sh)
+
+  // Draw source image into offscreen at sim resolution
+  const off = document.createElement('canvas')
+  off.width = sw; off.height = sh
+  const oc = off.getContext('2d')
+  const ar = img.naturalWidth / img.naturalHeight, cr = sw / sh
+  let dw, dh, dx, dy
+  if (ar > cr) { dh = sh; dw = dh * ar; dy = 0; dx = (sw - dw) / 2 }
+  else          { dw = sw; dh = dw / ar; dx = 0; dy = (sh - dh) / 2 }
+  oc.drawImage(img, dx, dy, dw, dh)
+
+  const id = oc.getImageData(0, 0, sw, sh)
+  srcPx  = id.data
+
+  outImg = ctx.createImageData(sw, sh)
+  outPx  = outImg.data
+}
+
+function splash() {
+  const x = 4 + Math.floor(Math.random() * (sw - 8))
+  const y = 4 + Math.floor(Math.random() * (sh - 8))
+  drop(x, y, 8 + Math.random() * 6)
+}
+
+function drop(sx, sy, strength, r) {
+  r = r || 5
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx*dx + dy*dy > r*r) continue
+      const nx = sx+dx, ny = sy+dy
+      if (nx < 1 || nx >= sw-1 || ny < 1 || ny >= sh-1) continue
+      cur[ny*sw+nx] += strength
+    }
+  }
+}
+
+// ── Simulation step ──────────────────────────────────────────
+function step() {
+  for (let y = 1; y < sh-1; y++) {
+    for (let x = 1; x < sw-1; x++) {
+      const i = y*sw+x
+      const n = (cur[i-1]+cur[i+1]+cur[i-sw]+cur[i+sw]) * .5 - prv[i]
+      prv[i] = n * DAMP
+    }
+  }
+  // swap
+  const tmp = cur; cur = prv; prv = tmp
+}
+
+// ── Render ───────────────────────────────────────────────────
+function render() {
+  const src = srcPx, out = outPx
+  for (let y = 1; y < sh-1; y++) {
+    for (let x = 1; x < sw-1; x++) {
+      const i = y*sw+x
+
+      // surface normal from height gradient
+      const dhx = cur[i-1] - cur[i+1]
+      const dhy = cur[i-sw] - cur[i+sw]
+
+      // refraction offset
+      const ox = dhx * DISP
+      const oy = dhy * DISP
+
+      // bilinear sample
+      const fsx = Math.max(0, Math.min(sw-1.001, x+ox))
+      const fsy = Math.max(0, Math.min(sh-1.001, y+oy))
+      const ix = fsx|0, iy = fsy|0
+      const fx2 = fsx-ix, fy2 = fsy-iy
+
+      const s00 = (iy*sw+ix)*4
+      const s10 = s00+4
+      const s01 = s00+sw*4
+      const s11 = s01+4
+      const w00=(1-fx2)*(1-fy2), w10=fx2*(1-fy2), w01=(1-fx2)*fy2, w11=fx2*fy2
+
+      // caustic + specular brightness
+      const mag = Math.sqrt(dhx*dhx + dhy*dhy)
+      const caus = Math.min(mag * mag * 55, 95)
+
+      // specular dot(normal, lightDir)
+      const nx3 = -dhx*3, ny3 = -dhy*3, nz3 = 1
+      const len = Math.sqrt(nx3*nx3+ny3*ny3+1)
+      const ldx=.45, ldy=.8, ldz=1
+      const spec = Math.max(0,(nx3/len*ldx + ny3/len*ldy + nz3/len*ldz))
+      const specVal = Math.min(spec*spec*spec * 160, 100)
+
+      const di = i*4
+      out[di]   = Math.min(255, src[s00]*w00+src[s10]*w10+src[s01]*w01+src[s11]*w11 + caus + specVal)
+      out[di+1] = Math.min(255, src[s00+1]*w00+src[s10+1]*w10+src[s01+1]*w01+src[s11+1]*w11 + caus*0.94 + specVal)
+      out[di+2] = Math.min(255, src[s00+2]*w00+src[s10+2]*w10+src[s01+2]*w01+src[s11+2]*w11 + caus*0.78 + specVal + 14)
+      out[di+3] = 255
+    }
+  }
+}
+
+// ── Scale up ─────────────────────────────────────────────────
+const off2 = document.createElement('canvas')
+const oc2  = off2.getContext('2d')
+function draw() {
+  if (off2.width !== sw) { off2.width=sw; off2.height=sh }
+  oc2.putImageData(outImg, 0, 0)
+  ctx.save()
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(off2, 0, 0, W, H)
+  ctx.restore()
+}
+
+// ── Main loop ────────────────────────────────────────────────
+function loop() {
+  step()
+  render()
+  draw()
+
+  // parallax
+  fx += ((mx-.5)*-26 - fx) * .06
+  fy += ((my-.5)*-16 - fy) * .06
+  fl.style.transform = `translate(calc(-50% + ${fx}px),calc(-50% + ${fy}px))`
+
+  // ambient drips
+  if (Math.random() < .002) splash()
+
+  requestAnimationFrame(loop)
+}
+
+// ── Input ────────────────────────────────────────────────────
+function onMove(e) {
+  pmx=mx; pmy=my
+  mx=e.clientX/W; my=e.clientY/H
+  const spd = Math.hypot(mx-pmx, my-pmy)
+  if (spd > .002) drop(mx*sw|0, my*sh|0, spd*28, 6)
+}
+function onClick(e) { drop(e.clientX/W*sw|0, e.clientY/H*sh|0, 18, 8) }
+
+let ltx=0, lty=0
+function onTStart(e){
+  ltx=e.touches[0].clientX; lty=e.touches[0].clientY
+  drop(ltx/W*sw|0, lty/H*sh|0, 14, 8)
+}
+function onTouch(e){
+  const tx=e.touches[0].clientX, ty=e.touches[0].clientY
+  const spd=Math.hypot(tx-ltx,ty-lty)/W
+  if(spd>.002) drop(tx/W*sw|0, ty/H*sh|0, spd*25, 6)
+  ltx=tx; lty=ty; mx=tx/W; my=ty/H
+}
+</script>
+</body>
+</html>

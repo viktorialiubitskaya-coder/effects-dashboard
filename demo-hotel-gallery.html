@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>3D Gallery — Hotel Demo · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --notte:      #0a1929;
+    --notte-deep: #050d18;
+    --marmo:      #f5f1e8;
+    --oro:        #c9a961;
+    --oro-chiaro: #e8d4a0;
+    --ease:       cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  body {
+    background: var(--notte-deep);
+    color: var(--marmo);
+    font-family: 'Georgia', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    padding: 3rem 1rem 4rem;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fade-up 0.9s var(--ease) 0.1s forwards;
+  }
+  .eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--oro);
+    margin-bottom: 1rem;
+  }
+  .title {
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 300;
+    line-height: 1.05;
+    color: var(--marmo);
+    margin-bottom: 0.75rem;
+  }
+  .subtitle {
+    font-size: 0.95rem;
+    color: rgba(245,241,232,0.5);
+    font-family: 'Arial', sans-serif;
+    font-weight: 300;
+    max-width: 34rem;
+    line-height: 1.6;
+  }
+
+  /* ── Stage ── */
+  .stage-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 960px;
+    opacity: 0;
+    animation: fade-up 0.9s var(--ease) 0.35s forwards;
+  }
+  .stage {
+    width: 100%;
+    height: 360px;
+    perspective: 1200px;
+    perspective-origin: 50% 50%;
+    overflow: visible; /* allow box-reflect to show below */
+    position: relative;
+    cursor: grab;
+  }
+  .stage:active { cursor: grabbing; }
+
+  /* Ambient glow — 6 layers, only active one visible */
+  .ambient-layer {
+    position: absolute;
+    inset: -60px; /* bleed outside stage for wider glow */
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+    z-index: 0;
+  }
+  .ambient-layer.is-active { opacity: 1; }
+
+  /* Main carousel anchor */
+  .anchor {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Intro wrapper — handles scale intro + box-reflect */
+  .intro-wrap {
+    transform-style: preserve-3d;
+    animation: carousel-intro 1s var(--ease) 0.5s both;
+    -webkit-box-reflect: below 3px
+      linear-gradient(transparent 55%, rgba(5,13,24,0.45) 80%, rgba(5,13,24,0.85));
+  }
+  @keyframes carousel-intro {
+    from { opacity: 0; transform: scale3d(0.35, 0.35, 0.35); }
+    to   { opacity: 1; transform: scale3d(1, 1, 1); }
+  }
+
+  .scene {
+    width: 380px;
+    height: 250px;
+    transform-style: preserve-3d;
+    pointer-events: none;
+  }
+
+  /* ── Cards ── */
+  .card {
+    position: absolute;
+    inset: 0;
+    width: 380px;
+    height: 250px;
+    border: 1px solid rgba(201,169,97,0.15);
+    overflow: hidden;
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.5s, box-shadow 0.5s;
+    will-change: border-color, box-shadow;
+  }
+  .card.is-active {
+    border-color: rgba(201,169,97,0.8);
+    box-shadow: 0 0 50px rgba(201,169,97,0.25), 0 0 0 1px rgba(201,169,97,0.3);
+  }
+  .card img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    transition: transform 0.9s var(--ease);
+  }
+  .card.is-active img { transform: scale(1.05); }
+  .card-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(5,13,24,0.82) 0%, rgba(5,13,24,0.18) 50%, transparent 100%);
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .card:not(.is-active) .card-overlay {
+    background: linear-gradient(to top, rgba(5,13,24,0.92) 0%, rgba(5,13,24,0.55) 100%);
+  }
+  .card-tag {
+    position: absolute; top: 12px; left: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--marmo);
+    background: rgba(5,13,24,0.65);
+    border: 1px solid rgba(245,241,232,0.2);
+    padding: 3px 8px; backdrop-filter: blur(4px);
+    pointer-events: none;
+  }
+  .card-name {
+    position: absolute; bottom: 12px; left: 14px;
+    font-size: 1.7rem; font-weight: 300; color: var(--marmo);
+    text-shadow: 0 2px 12px rgba(5,13,24,0.9);
+    pointer-events: none; line-height: 1.1;
+  }
+  .card-loc {
+    position: absolute; bottom: 14px; right: 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--oro-chiaro); opacity: 0.8; pointer-events: none;
+  }
+
+  /* Reflection cards — no pointer events, no text */
+  .card-ref {
+    position: absolute; inset: 0;
+    width: 380px; height: 250px;
+    overflow: hidden; pointer-events: none;
+  }
+  .card-ref img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    pointer-events: none;
+  }
+
+  /* Side fades */
+  .stage-fade {
+    position: absolute; inset: 0;
+    background: linear-gradient(to right,
+      var(--notte-deep) 0%,
+      transparent 18%,
+      transparent 82%,
+      var(--notte-deep) 100%
+    );
+    pointer-events: none; z-index: 10;
+  }
+
+  /* ── Info panel ── */
+  .info-wrap {
+    width: 100%; max-width: 960px;
+    min-height: 140px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 1.25rem 2rem 0;
+    position: relative;
+    opacity: 0;
+    animation: fade-up 0.9s var(--ease) 0.7s forwards;
+  }
+  .info-panel {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0.4rem; padding: 1.25rem 2rem 0;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity 0.45s var(--ease), transform 0.45s var(--ease);
+    pointer-events: none;
+  }
+  .info-panel.is-visible {
+    opacity: 1; transform: translateY(0);
+    pointer-events: auto;
+  }
+  .info-tag {
+    font-family: 'Courier New', monospace;
+    font-size: 0.55rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--oro);
+  }
+  .info-name {
+    font-size: clamp(1.5rem, 3vw, 2.4rem);
+    font-weight: 300; color: var(--marmo); line-height: 1.1;
+  }
+  .info-loc {
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(245,241,232,0.42);
+  }
+  .info-desc {
+    font-size: 0.88rem; color: rgba(245,241,232,0.52);
+    font-family: 'Arial', sans-serif; font-weight: 300;
+    max-width: 30rem; line-height: 1.65; margin-top: 0.2rem;
+  }
+
+  /* Dots */
+  .dots {
+    display: flex; gap: 0.5rem;
+    margin-top: 0.5rem; justify-content: center;
+  }
+  .dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: rgba(201,169,97,0.22);
+    transition: background 0.4s, transform 0.4s;
+    cursor: pointer;
+  }
+  .dot.is-active { background: var(--oro); transform: scale(1.5); }
+
+  .hint {
+    margin-top: 0.9rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.52rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: rgba(201,169,97,0.3); text-align: center;
+  }
+
+  /* ── CTA ── */
+  .cta-wrap {
+    margin-top: 2.5rem; text-align: center;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 1rem;
+    opacity: 0;
+    animation: fade-up 0.9s var(--ease) 0.9s forwards;
+  }
+  .cta-label {
+    font-family: 'Courier New', monospace;
+    font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(245,241,232,0.32);
+  }
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 0.6em;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 1rem 2rem; background: var(--oro); color: var(--notte);
+    border: none; cursor: pointer; text-decoration: none;
+    transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease), transform 0.3s var(--ease);
+  }
+  .cta-btn:hover {
+    background: var(--oro-chiaro);
+    box-shadow: 0 0 40px rgba(201,169,97,0.3);
+    transform: translateY(-2px);
+  }
+
+  .agency-tag {
+    position: fixed; bottom: 1.25rem; right: 1.5rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(201,169,97,0.25);
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p class="eyebrow">Demo · Hotel &amp; Hospitality</p>
+  <h1 class="title">La tua struttura.<br>In una nuova dimensione.</h1>
+  <p class="subtitle">Un sito che parla per te prima ancora che il cliente arrivi. Galleria immersiva, prenotazione diretta, zero commissioni.</p>
+</div>
+
+<div class="stage-wrap">
+  <div class="stage" id="stage">
+
+    <!-- Ambient glow layers (one per card) -->
+    <div class="ambient-layer is-active" data-gi="0" style="background:radial-gradient(ellipse 80% 60% at 50% 40%, rgba(13,110,140,0.5) 0%, transparent 65%)"></div>
+    <div class="ambient-layer" data-gi="1" style="background:radial-gradient(ellipse 80% 60% at 50% 40%, rgba(160,80,20,0.48) 0%, transparent 65%)"></div>
+    <div class="ambient-layer" data-gi="2" style="background:radial-gradient(ellipse 80% 60% at 50% 40%, rgba(20,90,20,0.45)  0%, transparent 65%)"></div>
+    <div class="ambient-layer" data-gi="3" style="background:radial-gradient(ellipse 80% 60% at 50% 40%, rgba(90,16,120,0.48) 0%, transparent 65%)"></div>
+    <div class="ambient-layer" data-gi="4" style="background:radial-gradient(ellipse 80% 60% at 50% 40%, rgba(10,40,120,0.52) 0%, transparent 65%)"></div>
+    <div class="ambient-layer" data-gi="5" style="background:radial-gradient(ellipse 80% 60% at 50% 40%, rgba(130,85,14,0.48) 0%, transparent 65%)"></div>
+
+    <!-- Main carousel -->
+    <div class="anchor">
+      <div class="intro-wrap">
+        <div class="scene" id="scene">
+
+          <div class="card" data-index="0" style="transform:rotateY(0deg) translateZ(420px)">
+            <img src="img/hotel-1.jpg" alt="Vista Mare" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#0b2a3a,#0d5c7a,#c9a961)'">
+            <div class="card-overlay"></div>
+            <span class="card-tag">Suite</span>
+            <span class="card-name">Vista Mare</span>
+            <span class="card-loc">Calabria</span>
+          </div>
+
+          <div class="card" data-index="1" style="transform:rotateY(60deg) translateZ(420px)">
+            <img src="img/hotel-2.jpg" alt="Infinity Pool" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#1a0e06,#5c3010,#c9a961)'">
+            <div class="card-overlay"></div>
+            <span class="card-tag">Terrazza</span>
+            <span class="card-name">Infinity Pool</span>
+            <span class="card-loc">Tropea</span>
+          </div>
+
+          <div class="card" data-index="2" style="transform:rotateY(120deg) translateZ(420px)">
+            <img src="img/hotel-3.jpg" alt="Ristorante" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#0a1a0a,#1a4a1a,#c9a961)'">
+            <div class="card-overlay"></div>
+            <span class="card-tag">Ristorante</span>
+            <span class="card-name">Sapori del Sud</span>
+            <span class="card-loc">Calabria</span>
+          </div>
+
+          <div class="card" data-index="3" style="transform:rotateY(180deg) translateZ(420px)">
+            <img src="img/hotel-4.jpg" alt="Spa" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#1a0a1a,#4a1a5c,#c9a961)'">
+            <div class="card-overlay"></div>
+            <span class="card-tag">Benessere</span>
+            <span class="card-name">Spa &amp; Relax</span>
+            <span class="card-loc">Sila</span>
+          </div>
+
+          <div class="card" data-index="4" style="transform:rotateY(240deg) translateZ(420px)">
+            <img src="img/hotel-5.jpg" alt="Spiaggia" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#050d18,#0a2a5c,#c9a961)'">
+            <div class="card-overlay"></div>
+            <span class="card-tag">Spiaggia</span>
+            <span class="card-name">Privata</span>
+            <span class="card-loc">Costa degli Dei</span>
+          </div>
+
+          <div class="card" data-index="5" style="transform:rotateY(300deg) translateZ(420px)">
+            <img src="img/hotel-6.jpg" alt="Camera Deluxe" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#1a1006,#5c4010,#c9a961)'">
+            <div class="card-overlay"></div>
+            <span class="card-tag">Camera</span>
+            <span class="card-name">Deluxe</span>
+            <span class="card-loc">Catanzaro</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-fade"></div>
+  </div>
+
+  <!-- Info panels -->
+  <div class="info-wrap" id="info-wrap">
+    <div class="info-panel" data-for="0">
+      <span class="info-tag">Suite Panoramica</span>
+      <h2 class="info-name">Vista Mare</h2>
+      <p class="info-loc">Calabria · Costa Tirrenica</p>
+      <p class="info-desc">Terrazza privata sul Tirreno. Ogni mattina il mare entra nella stanza prima ancora che tu apra gli occhi.</p>
+    </div>
+    <div class="info-panel" data-for="1">
+      <span class="info-tag">Terrazza Esclusiva</span>
+      <h2 class="info-name">Infinity Pool</h2>
+      <p class="info-loc">Tropea · Capo Vaticano</p>
+      <p class="info-desc">Piscina a sfioro che si fonde con l'orizzonte. Tramonto su Stromboli incluso.</p>
+    </div>
+    <div class="info-panel" data-for="2">
+      <span class="info-tag">Cucina del Territorio</span>
+      <h2 class="info-name">Sapori del Sud</h2>
+      <p class="info-loc">Calabria · Ristorante Gourmet</p>
+      <p class="info-desc">Pesce del giorno, 'nduja artigianale, vini IGT Calabria. Una cena che racconta il Sud com'è davvero.</p>
+    </div>
+    <div class="info-panel" data-for="3">
+      <span class="info-tag">Wellness Esclusivo</span>
+      <h2 class="info-name">Spa &amp; Relax</h2>
+      <p class="info-loc">Sila · Altopiano Silano</p>
+      <p class="info-desc">Trattamenti con argille e oli essenziali calabresi. Silenzio, profumi, ritmo lento.</p>
+    </div>
+    <div class="info-panel" data-for="4">
+      <span class="info-tag">Accesso Riservato</span>
+      <h2 class="info-name">Spiaggia Privata</h2>
+      <p class="info-loc">Costa degli Dei · Pizzo Calabro</p>
+      <p class="info-desc">Acqua cristallina, lettini riservati, bar in spiaggia. Il Mediterraneo senza folla.</p>
+    </div>
+    <div class="info-panel" data-for="5">
+      <span class="info-tag">Camera Superior</span>
+      <h2 class="info-name">Deluxe</h2>
+      <p class="info-loc">Catanzaro · Centro Storico</p>
+      <p class="info-desc">Interni curati, biancheria pregiata, servizio su misura. Il lusso nei dettagli che non si vedono — ma si sentono.</p>
+    </div>
+  </div>
+
+  <div class="dots" id="dots">
+    <div class="dot" data-to="0"></div>
+    <div class="dot" data-to="1"></div>
+    <div class="dot" data-to="2"></div>
+    <div class="dot" data-to="3"></div>
+    <div class="dot" data-to="4"></div>
+    <div class="dot" data-to="5"></div>
+  </div>
+  <p class="hint">← trascina per esplorare →</p>
+</div>
+
+<div class="cta-wrap">
+  <p class="cta-label">Vuoi un sito così per il tuo hotel?</p>
+  <a class="cta-btn" href="mailto:info@digitalevolution.it">Contattaci →</a>
+</div>
+
+<span class="agency-tag">Digital Evolution Italy</span>
+
+<script>
+  const N          = 6
+  const STEP       = 360 / N
+  const AUTO_SPEED = 0.22
+
+  const scene       = document.getElementById('scene')
+  const stage       = document.getElementById('stage')
+  const cards       = Array.from(document.querySelectorAll('.card'))
+  const panels      = Array.from(document.querySelectorAll('.info-panel'))
+  const dots        = Array.from(document.querySelectorAll('.dot'))
+  const glowLayers  = Array.from(document.querySelectorAll('.ambient-layer'))
+
+  let angle      = 0
+  let vel        = 0
+  let dragging   = false
+  let hovered    = false
+  let snapping   = false
+  let snapTarget = 0
+  let lastActive = -1
+
+  /* ── snap ── */
+  function snapTo(idx) {
+    const cur     = angle % 360
+    let   target  = (-idx * STEP) % 360
+    let   diff    = target - cur
+    if (diff >  180) diff -= 360
+    if (diff < -180) diff += 360
+    snapTarget = angle + diff
+    snapping   = true
+    vel        = 0
+  }
+  function snapNearest() {
+    const norm = ((-angle % 360) + 360) % 360
+    snapTo(Math.round(norm / STEP) % N)
+  }
+
+  /* ── active index ── */
+  function getActive() {
+    return (((Math.round(-angle / STEP) % N) + N) % N)
+  }
+
+  /* ── update UI ── */
+  function updateUI(idx) {
+    if (idx === lastActive) return
+    lastActive = idx
+    cards.forEach((c, i)      => c.classList.toggle('is-active', i === idx))
+    panels.forEach(p          => p.classList.toggle('is-visible', +p.dataset.for === idx))
+    dots.forEach((d, i)       => d.classList.toggle('is-active', i === idx))
+    glowLayers.forEach((g, i) => g.classList.toggle('is-active', i === idx))
+  }
+
+  /* ── tick ── */
+  function tick() {
+    if (!dragging) {
+      if (snapping) {
+        const diff = snapTarget - angle
+        if (Math.abs(diff) < 0.06) { angle = snapTarget; snapping = false }
+        else angle += diff * 0.13
+      } else if (Math.abs(vel) > 0.15) {
+        angle += vel; vel *= 0.91
+      } else if (vel !== 0) {
+        vel = 0; snapNearest()
+      } else if (!hovered) {
+        angle += AUTO_SPEED
+      }
+    }
+
+    scene.style.transform = `rotateX(-8deg) rotateY(${angle}deg)`
+    updateUI(getActive())
+    requestAnimationFrame(tick)
+  }
+
+  requestAnimationFrame(tick)
+
+
+  /* ── mouse ── */
+  stage.addEventListener('mousedown', e => {
+    dragging = true; vel = 0; snapping = false
+    stage._lx = e.clientX
+  })
+  stage.addEventListener('mousemove', e => {
+    if (!dragging) return
+    const dx = e.clientX - stage._lx
+    vel = dx * 0.5; angle += dx * 0.5
+    stage._lx = e.clientX
+  })
+  stage.addEventListener('mouseup',    () => { dragging = false; if (Math.abs(vel) < 1) snapNearest() })
+  stage.addEventListener('mouseleave', () => { dragging = false; hovered = false; snapNearest() })
+  stage.addEventListener('mouseenter', () => { hovered = true; if (!dragging) snapNearest() })
+
+  /* ── touch ── */
+  stage.addEventListener('touchstart', e => {
+    dragging = true; vel = 0; snapping = false
+    stage._lx = e.touches[0].clientX
+  }, { passive: true })
+  stage.addEventListener('touchmove', e => {
+    if (!dragging) return
+    const dx = e.touches[0].clientX - stage._lx
+    vel = dx * 0.5; angle += dx * 0.5
+    stage._lx = e.touches[0].clientX
+  }, { passive: true })
+  stage.addEventListener('touchend', () => { dragging = false; snapNearest() })
+
+  /* ── dots + card click ── */
+  dots.forEach(d  => d.addEventListener('click', () => snapTo(+d.dataset.to)))
+  cards.forEach((c, i) => c.addEventListener('click', () => { if (getActive() !== i) snapTo(i) }))
+</script>
+</body>
+</html>

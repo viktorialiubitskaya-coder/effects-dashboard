@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cylinder Carousel · Spa · Digital Evolution Italy</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--t:.85s;--ease:cubic-bezier(0.25,0.46,0.45,0.94)}
+html,body{height:100%;overflow:hidden;background:#0C0A14;font-family:'Inter',sans-serif;color:#fff}
+
+/* Header */
+.header{
+  position:fixed;top:0;left:0;right:0;z-index:20;
+  padding:1.6rem 3rem;
+  display:flex;justify-content:space-between;align-items:flex-start;
+}
+.logo-main{font-size:.48rem;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.logo-sub{font-size:.38rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-top:.2rem}
+.header-tag{font-size:.4rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.28);text-align:right;line-height:1.8}
+
+/* Scene */
+.scene{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:2.2rem;
+}
+
+/* 3D Stage */
+.stage{
+  perspective:1400px;
+  width:100%;height:520px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  user-select:none;
+}
+
+.cylinder{
+  position:relative;
+  width:300px;height:440px;
+  transform-style:preserve-3d;
+  transition:transform var(--t) var(--ease);
+  cursor:grab;
+}
+.cylinder:active{cursor:grabbing}
+
+.slide{
+  position:absolute;inset:0;
+  border-radius:12px;overflow:hidden;
+  backface-visibility:hidden;
+  transition:filter var(--t) ease,opacity var(--t) ease;
+}
+.slide img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+
+.slide-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.15) 55%,transparent 100%);
+  opacity:0;transition:opacity .55s;
+}
+.slide.is-active .slide-overlay{opacity:1}
+
+.slide-label{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:1.1rem 1.2rem;
+  transform:translateY(10px);opacity:0;
+  transition:transform .55s var(--ease),opacity .45s;
+}
+.slide.is-active .slide-label{transform:translateY(0);opacity:1}
+.slide-label-tag{font-size:.36rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:.35rem}
+.slide-label-name{font-family:'Playfair Display',serif;font-size:1.05rem;color:#fff;line-height:1.25}
+
+.slide:not(.is-active){filter:brightness(.38) saturate(.5);opacity:.9}
+
+/* Bottom */
+.bottom{display:flex;flex-direction:column;align-items:center;gap:1.3rem;z-index:10}
+.main-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(1.5rem,3vw,2.5rem);
+  font-weight:400;letter-spacing:.01em;
+  color:rgba(255,255,255,.88);text-align:center;line-height:1.2;
+}
+.main-title em{font-style:italic;color:rgba(255,255,255,.5)}
+
+.nav{display:flex;align-items:center;gap:1.5rem}
+.nav-btn{
+  width:42px;height:42px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);
+  color:rgba(255,255,255,.65);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,border-color .2s,transform .15s;
+  backdrop-filter:blur(8px);
+}
+.nav-btn:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.38);transform:scale(1.1)}
+.nav-btn:active{transform:scale(.92)}
+
+.dots{display:flex;gap:6px;align-items:center}
+.dot{
+  width:4px;height:4px;border-radius:50%;
+  background:rgba(255,255,255,.22);cursor:pointer;
+  transition:width .35s,border-radius .35s,background .35s;
+}
+.dot.active{width:24px;border-radius:2px;background:rgba(255,255,255,.8)}
+.dot:hover:not(.active){background:rgba(255,255,255,.4)}
+
+/* Footer */
+.footer-tag{
+  position:fixed;bottom:1rem;right:1.5rem;z-index:20;
+  font-size:.36rem;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.1);
+  padding:.2rem .44rem;border-radius:2px;
+}
+.footer-tag em{color:rgba(255,255,255,.38);font-style:normal}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo-main">Centro Benessere · Calabria</div>
+    <div class="logo-sub">Luxury Spa & Wellness</div>
+  </div>
+  <div class="header-tag">Sud Italia<br>Experience</div>
+</div>
+
+<div class="scene">
+  <div class="stage">
+    <div class="cylinder" id="cylinder"></div>
+  </div>
+  <div class="bottom">
+    <h1 class="main-title">Il tuo <em>rituale</em><br>di benessere</h1>
+    <div class="nav">
+      <button class="nav-btn" id="prevBtn">←</button>
+      <div class="dots" id="dotsEl"></div>
+      <button class="nav-btn" id="nextBtn">→</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer-tag">Effetto: <em>Cylinder Carousel</em> · Spa · Digital Evolution Italy</div>
+
+<script>
+const SLIDES = [
+  { img:'img/spa/s-1.jpg', tag:'Trattamento',  name:'Massaggio Relax' },
+  { img:'img/spa/s-2.jpg', tag:'Piscina',       name:'Infinity Pool' },
+  { img:'img/spa/s-3.jpg', tag:'Sauna',          name:'Finnish Sauna' },
+  { img:'img/spa/s-4.jpg', tag:'Viso',           name:'Ritual Beauty' },
+  { img:'img/spa/s-5.jpg', tag:'Relax',          name:'Lounge Esclusivo' },
+  { img:'img/spa/s-6.jpg', tag:'Aromaterapia',   name:'Oli Essenziali' },
+]
+
+const N      = SLIDES.length
+const CARD_W = 300
+const RADIUS = Math.round((CARD_W / 2) / Math.tan(Math.PI / N))  // 260px
+const STEP   = 360 / N
+
+let cur = 0, busy = false
+let dragStart = null, dragDelta = 0
+
+const cylinder = document.getElementById('cylinder')
+const dotsEl   = document.getElementById('dotsEl')
+
+// Build slides
+SLIDES.forEach((s, i) => {
+  const el = document.createElement('div')
+  el.className = 'slide'
+  el.style.transform = `rotateY(${STEP * i}deg) translateZ(${RADIUS}px)`
+  el.innerHTML = `
+    <img src="${s.img}" loading="eager" alt="${s.name}"/>
+    <div class="slide-overlay"></div>
+    <div class="slide-label">
+      <div class="slide-label-tag">${s.tag}</div>
+      <div class="slide-label-name">${s.name}</div>
+    </div>`
+  el.addEventListener('click', () => goTo(i))
+  cylinder.appendChild(el)
+})
+const slides = [...cylinder.querySelectorAll('.slide')]
+
+// Build dots
+SLIDES.forEach((_, i) => {
+  const d = document.createElement('div')
+  d.className = 'dot'
+  d.addEventListener('click', () => goTo(i))
+  dotsEl.appendChild(d)
+})
+const dotEls = [...dotsEl.querySelectorAll('.dot')]
+
+function rotateTo(ai) {
+  cylinder.style.transform = `rotateY(${-STEP * ai}deg)`
+  slides.forEach((s, i) => s.classList.toggle('is-active', i === ai))
+  dotEls.forEach((d, i) => d.classList.toggle('active', i === ai))
+}
+
+function goTo(idx) {
+  if (busy) return
+  busy = true
+  cur = ((idx % N) + N) % N
+  rotateTo(cur)
+  setTimeout(() => { busy = false }, 920)
+}
+
+// Init
+rotateTo(0)
+
+// Preload
+SLIDES.forEach(s => { const img = new Image(); img.src = s.img })
+
+document.getElementById('prevBtn').addEventListener('click', () => goTo(cur - 1))
+document.getElementById('nextBtn').addEventListener('click', () => goTo(cur + 1))
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowLeft')  goTo(cur - 1)
+  if (e.key==='ArrowRight') goTo(cur + 1)
+})
+
+// Wheel
+let wLock = false
+document.addEventListener('wheel', e => {
+  if (wLock || Math.abs(e.deltaY) < 20) return
+  wLock = true
+  goTo(e.deltaY > 0 ? cur + 1 : cur - 1)
+  setTimeout(() => { wLock = false }, 950)
+},{passive:true})
+
+// Mouse drag
+cylinder.addEventListener('mousedown', e => {
+  dragStart = e.clientX; dragDelta = 0
+  cylinder.style.transition = 'none'
+})
+document.addEventListener('mousemove', e => {
+  if (dragStart === null) return
+  dragDelta = e.clientX - dragStart
+  cylinder.style.transform = `rotateY(${-STEP * cur - dragDelta * 0.28}deg)`
+})
+document.addEventListener('mouseup', () => {
+  if (dragStart === null) return
+  cylinder.style.transition = ''
+  if (Math.abs(dragDelta) > 44) {
+    goTo(dragDelta < 0 ? cur + 1 : cur - 1)
+  } else {
+    rotateTo(cur)
+  }
+  dragStart = null; dragDelta = 0
+})
+
+// Touch
+let tx = 0
+document.addEventListener('touchstart', e => { tx = e.touches[0].clientX },{passive:true})
+document.addEventListener('touchend',   e => {
+  const dx = tx - e.changedTouches[0].clientX
+  if (Math.abs(dx) > 44) goTo(dx > 0 ? cur + 1 : cur - 1)
+},{passive:true})
+</script>
+</body>
+</html>

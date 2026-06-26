@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Effects Dashboard · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #050d18; --surface: #0a1929; --border: rgba(201,169,97,0.15);
+    --oro: #c9a961; --oro-dim: rgba(201,169,97,0.45);
+    --text: #f5f1e8; --text-dim: rgba(245,241,232,0.45);
+    --green: #2a7a4a; --mono: 'Courier New',monospace; --serif: 'Georgia',serif;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; line-height: 1.6; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+  .sidebar-logo { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+  .sidebar-logo-name { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--oro); line-height: 1.4; }
+  .sidebar-logo-sub { font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-top: 0.2rem; }
+  .sidebar-section { padding: 0.5rem 1.25rem 0.25rem; font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-top: 0.5rem; }
+  .sidebar-link { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1.25rem; font-size: 0.7rem; color: var(--text-dim); text-decoration: none; letter-spacing: 0.05em; transition: color 0.2s, background 0.2s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
+  .sidebar-link:hover, .sidebar-link.active { color: var(--text); background: rgba(201,169,97,0.07); }
+  .sidebar-link.active { color: var(--oro); }
+  .sidebar-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .sidebar-dot.wip { background: var(--oro); }
+  .sidebar-footer { margin-top: auto; padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+  .sidebar-footer-text { font-size: 0.5rem; letter-spacing: 0.12em; color: var(--text-dim); line-height: 1.8; }
+
+  /* ── Main ── */
+  .main { flex: 1; padding: 2rem 2.5rem; max-width: 1100px; }
+  .page-header { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+  .page-title { font-family: var(--serif); font-size: 2rem; font-weight: 300; color: var(--text); line-height: 1; }
+  .page-sub { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-top: 0.4rem; }
+  .search-wrap { display: flex; align-items: center; gap: 0.5rem; background: var(--surface); border: 1px solid var(--border); padding: 0.5rem 0.75rem; min-width: 220px; }
+  .search-icon { color: var(--text-dim); font-size: 0.7rem; }
+  .search-input { background: none; border: none; outline: none; color: var(--text); font-family: var(--mono); font-size: 0.7rem; width: 100%; }
+  .search-input::placeholder { color: var(--text-dim); }
+
+  /* Stats */
+  .stats-bar { display: flex; gap: 2rem; padding: 1rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .stat { display: flex; flex-direction: column; gap: 0.2rem; }
+  .stat-val { font-family: var(--serif); font-size: 1.5rem; font-weight: 300; color: var(--oro); line-height: 1; }
+  .stat-label { font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); }
+
+  /* Filters */
+  .filters { display: flex; gap: 0.5rem; margin-bottom: 1.75rem; flex-wrap: wrap; }
+  .filter-btn { padding: 0.3rem 0.75rem; font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--border); background: none; color: var(--text-dim); cursor: pointer; transition: all 0.2s; }
+  .filter-btn:hover { border-color: var(--oro-dim); color: var(--text); }
+  .filter-btn.active { border-color: var(--oro); color: var(--oro); background: rgba(201,169,97,0.07); }
+
+  /* Section heading */
+  .section-heading { font-size: 0.55rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--oro); margin-bottom: 1rem; margin-top: 2rem; display: flex; align-items: center; gap: 0.75rem; }
+  .section-heading::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, rgba(201,169,97,0.3), transparent); }
+  .section-count { font-size: 0.45rem; color: var(--text-dim); letter-spacing: 0.1em; }
+
+  /* Grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 2px; }
+
+  /* Card */
+  .card { background: var(--bg); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; transition: background 0.2s; }
+  .card:hover { background: var(--surface); }
+  .card-preview { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border); overflow: hidden; position: relative; background: var(--surface); }
+  .card-preview iframe { width: 250%; height: 250%; transform: scale(0.4); transform-origin: top left; pointer-events: none; border: none; }
+  .card-preview-bg { width: 100%; height: 100%; }
+  .card-preview-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); }
+  .card-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+  .card-status { display: flex; align-items: center; gap: 0.35rem; font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .status-ready .status-dot { background: #2a7a4a; }
+  .status-ready { color: #4aaa6a; }
+  .status-wip .status-dot { background: var(--oro); }
+  .status-wip { color: var(--oro-dim); }
+  .card-type { font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); }
+  .card-name { font-family: var(--serif); font-size: 1.05rem; font-weight: 300; color: var(--text); line-height: 1.2; }
+  .card-desc { font-size: 0.65rem; color: var(--text-dim); line-height: 1.6; flex: 1; }
+  .card-clients { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .client-tag { font-size: 0.48rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 1px 6px; border: 1px solid rgba(201,169,97,0.2); color: var(--text-dim); }
+  .card-actions { display: flex; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); margin-top: auto; }
+  .action-btn { flex: 1; padding: 0.45rem 0.5rem; font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--border); background: none; color: var(--text-dim); cursor: pointer; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.3rem; transition: all 0.2s; }
+  .action-btn:hover { border-color: var(--oro-dim); color: var(--text); }
+  .action-btn.primary { border-color: rgba(201,169,97,0.4); color: var(--oro); }
+  .action-btn.primary:hover { background: rgba(201,169,97,0.1); border-color: var(--oro); }
+
+  /* Skill cmd */
+  .skill-cmd { display: flex; align-items: center; gap: 0.5rem; background: rgba(201,169,97,0.06); border: 1px solid rgba(201,169,97,0.15); padding: 0.4rem 0.6rem; cursor: pointer; transition: background 0.2s; }
+  .skill-cmd:hover { background: rgba(201,169,97,0.12); }
+  .skill-cmd code { font-family: var(--mono); font-size: 0.6rem; color: var(--oro); flex: 1; }
+  .skill-cmd-copy { font-size: 0.5rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Idea row */
+  .idea-row { display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1rem; border: 1px solid var(--border); margin-bottom: 1px; transition: background 0.2s; }
+  .idea-row:hover { background: var(--surface); }
+  .idea-name { font-family: var(--serif); font-size: 0.9rem; font-weight: 300; color: var(--text-dim); flex: 1; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-name">Digital Evolution<br>Italy</div>
+    <div class="sidebar-logo-sub">Effects Dashboard · v2</div>
+  </div>
+
+  <div class="sidebar-section">Catalogo</div>
+  <a class="sidebar-link" href="#hero"><span class="sidebar-dot"></span>Hero · Slider</a>
+  <a class="sidebar-link" href="#galleria"><span class="sidebar-dot"></span>Galleria</a>
+  <a class="sidebar-link" href="#navigazione"><span class="sidebar-dot"></span>Navigazione</a>
+  <a class="sidebar-link" href="#comparazione"><span class="sidebar-dot"></span>Comparazione</a>
+  <a class="sidebar-link" href="#prezzi"><span class="sidebar-dot"></span>Prezzi</a>
+  <a class="sidebar-link" href="#componenti"><span class="sidebar-dot"></span>Componenti UI</a>
+  <a class="sidebar-link" href="#cursore"><span class="sidebar-dot"></span>Cursore</a>
+  <a class="sidebar-link" href="#figma"><span class="sidebar-dot"></span>Figma</a>
+  <a class="sidebar-link" href="#idee"><span class="sidebar-dot wip"></span>In lista</a>
+
+  <div class="sidebar-section">Strumenti</div>
+  <a class="sidebar-link" href="demo-hotel-gallery.html" target="_blank">↗ Demo Hotel</a>
+  <button class="sidebar-link" onclick="navigator.clipboard.writeText('npm run record')">⏺ Copy record cmd</button>
+
+  <div class="sidebar-section">Skills Claude</div>
+  <button class="sidebar-link" onclick="copySkill('/demo-3d-effect')">/demo-3d-effect</button>
+  <button class="sidebar-link" onclick="copySkill('/html-demo')">/html-demo</button>
+  <button class="sidebar-link" onclick="copySkill('/scroll-video-hero')">/scroll-video-hero</button>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-text">
+      Server: <span id="server-status" style="color:var(--text-dim)">checking...</span><br>
+      localhost:3000
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Effects</h1>
+      <p class="page-sub">Catalogo effetti · Viktoria Agency</p>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" type="text" placeholder="Cerca effetto o cliente..." id="search" oninput="applyFilters()"/>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-val">31</span><span class="stat-label">Pronti</span></div>
+    <div class="stat"><span class="stat-val">2</span><span class="stat-label">In sviluppo</span></div>
+    <div class="stat"><span class="stat-val">2</span><span class="stat-label">In lista</span></div>
+    <div class="stat"><span class="stat-val">8</span><span class="stat-label">Categorie</span></div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Tutti</button>
+    <button class="filter-btn" onclick="setFilter('hero',this)">Hero · Slider</button>
+    <button class="filter-btn" onclick="setFilter('galleria',this)">Galleria</button>
+    <button class="filter-btn" onclick="setFilter('navigazione',this)">Navigazione</button>
+    <button class="filter-btn" onclick="setFilter('comparazione',this)">Comparazione</button>
+    <button class="filter-btn" onclick="setFilter('prezzi',this)">Prezzi</button>
+    <button class="filter-btn" onclick="setFilter('ui',this)">Componenti</button>
+    <button class="filter-btn" onclick="setFilter('cursore',this)">Cursore</button>
+    <button class="filter-btn" onclick="setFilter('figma',this)">Figma</button>
+  </div>
+
+  <!-- ══ HERO · SLIDER ══════════════════════════════════════════════════ -->
+  <div class="section-heading" id="hero">Hero · Slider <span class="section-count">4</span></div>
+  <div class="grid">
+
+    <div class="card" data-category="hero" data-clients="dmc tour operator travel">
+      <div class="card-preview"><iframe src="demo-travel-slider.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Hero · Slider</span></div>
+      <div class="card-name">Travel Slider · Hero</div>
+      <div class="card-desc">Foto full-screen crossfade. Testo bold sinistra, 3 miniature portait destra (finestra 3/6). Barra progresso + frecce. Keyboard/swipe.</div>
+      <div class="card-clients"><span class="client-tag">DMC</span><span class="client-tag">Tour Operator</span><span class="client-tag">Travel</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-travel-slider.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 31 demo-travel-slider.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="hero" data-clients="ristorante food menu">
+      <div class="card-preview"><iframe src="demo-animation-slider.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Hero · Slider</span></div>
+      <div class="card-name">Food Slider · Verticale</div>
+      <div class="card-desc">Testo serif sinistra + 5 foto verticali destra. Attiva grande e colorata, adiacenti desaturate. Sfondo estratto automaticamente dal colore foto.</div>
+      <div class="card-clients"><span class="client-tag">Ristorante</span><span class="client-tag">Food</span><span class="client-tag">Menu</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-animation-slider.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 30 demo-animation-slider.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="hero" data-clients="hotel agenzia tutti">
+      <div class="card-preview"><iframe src="demo-hero.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Hero · Parallax</span></div>
+      <div class="card-name">Hero Section · Parallax</div>
+      <div class="card-desc">Curtain reveal per riga, parallax multiplo su scroll, marquee clienti, scroll fill bar, lerped cursor, ornament gold.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Agenzia</span><span class="client-tag">Tutti</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-hero.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 18 demo-hero.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="hero" data-clients="luxury dmc resort agenzia">
+      <div class="card-preview">
+        <div class="card-preview-bg" style="background:linear-gradient(135deg,#050d18 0%,#0a2a5c 50%,#1a5c8a 100%)"></div>
+        <div class="card-preview-label">Video scrubbing</div>
+      </div>
+      <div class="card-meta"><div class="card-status status-wip"><span class="status-dot"></span>Skill pronta</div><span class="card-type">Hero · Video</span></div>
+      <div class="card-name">Scroll Video Hero</div>
+      <div class="card-desc">Video avanza sincronizzato con lo scroll. GSAP ScrollTrigger + rAF lerp. Testato su iPhone + desktop. GOP=1 + range-server 206.</div>
+      <div class="card-clients"><span class="client-tag">Luxury</span><span class="client-tag">DMC</span><span class="client-tag">Resort</span></div>
+      <div class="skill-cmd" onclick="copySkill('/scroll-video-hero')"><code>/scroll-video-hero</code><span class="skill-cmd-copy">copia</span></div>
+      <div class="card-actions">
+        <button class="action-btn primary" onclick="copySkill('/scroll-video-hero')">+ Installa skill</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ GALLERIA ═══════════════════════════════════════════════════════ -->
+  <div class="section-heading" id="galleria">Galleria <span class="section-count">9</span></div>
+  <div class="grid">
+
+    <div class="card" data-category="galleria" data-clients="dmc tour operator travel calabria destinazioni spirale elica loop 3d">
+      <div class="card-preview"><iframe src="demo-loop-spiral.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · 3D Loop</span></div>
+      <div class="card-name">Loop Spiral</div>
+      <div class="card-desc">Elica 3D di 20 foto che gira all'infinito (CSS transform-3d + JS). Profondità → scala/opacità, riciclo continuo senza giunte. Scroll + drag + autoplay con inerzia. HTML/CSS/JS puro, niente librerie.</div>
+      <div class="card-clients"><span class="client-tag">DMC</span><span class="client-tag">Travel</span><span class="client-tag">Portfolio</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-loop-spiral.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 18 demo-loop-spiral.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="yacht luxury travel charter dmc hotel ruota wheel cerchio anello 3d immersivo sfondo">
+      <div class="card-preview"><iframe src="demo-circular-wheel.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · 3D Wheel</span></div>
+      <div class="card-name">Circular Gallery — Ruota 3D</div>
+      <div class="card-desc">Anello verticale di 12 foto (yacht & luxury travel, generate AI) che gira (CSS transform-3d), hub centrale "Circular Gallery". Click su una foto → riempie lo schermo come sfondo immersivo, anello si attenua sopra. Drag + inerzia + autoplay. HTML/CSS/JS puro.</div>
+      <div class="card-clients"><span class="client-tag">Yacht</span><span class="client-tag">Luxury Travel</span><span class="client-tag">Charter</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-circular-wheel.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 18 demo-circular-wheel.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="dmc tour operator travel calabria destinazioni circolare ruota">
+      <div class="card-preview"><iframe src="demo-circular-gallery.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · Circular</span></div>
+      <div class="card-name">Circular Gallery — DMC Calabria</div>
+      <div class="card-desc">Anello radiale di destinazioni che ruota lentamente (pausa all'hover), fan-out d'ingresso, etichetta-toponimo per scheda, grande medaglione centrale che cambia al click. 20 località della Calabria, CSS puro + transform.</div>
+      <div class="card-clients"><span class="client-tag">DMC</span><span class="client-tag">Tour Operator</span><span class="client-tag">Travel</span><span class="client-tag">Destinazioni</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-circular-gallery.html" target="_blank">↗ Apri</a>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="ristorante hotel fotografo portfolio masonry lightbox">
+      <div class="card-preview"><iframe src="demo-masonry-lightbox.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · Masonry</span></div>
+      <div class="card-name">Masonry Gallery + Lightbox</div>
+      <div class="card-desc">Griglia a mattoncini con altezze variabili (CSS columns), stagger reveal allo scroll, hover zoom + caption. Click → lightbox a tutto schermo con frecce, tastiera, swipe e contatore.</div>
+      <div class="card-clients"><span class="client-tag">Ristorante</span><span class="client-tag">Hotel</span><span class="client-tag">Fotografo</span><span class="client-tag">Portfolio</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-masonry-lightbox.html" target="_blank">↗ Apri</a>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="hotel spa resort dmc portfolio">
+      <div class="card-preview"><iframe src="demo-hotel-gallery.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · 3D</span></div>
+      <div class="card-name">3D Circle Gallery — Hotel</div>
+      <div class="card-desc">Carosello 3D rotante con snap, ambient glow per scheda, info panel, animazione intro. Generabile per qualsiasi cliente con /demo-3d-effect.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Spa</span><span class="client-tag">Resort</span><span class="client-tag">DMC</span></div>
+      <div class="skill-cmd" onclick="copySkill('/demo-3d-effect hotel')"><code>/demo-3d-effect hotel</code><span class="skill-cmd-copy">copia</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-hotel-gallery.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copySkill('/demo-3d-effect hotel')">⌘ Genera</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="ristorante pizzeria bar">
+      <div class="card-preview">
+        <div class="card-preview-bg" style="background:linear-gradient(135deg,#1a0a06 0%,#6b2010 50%,#c9a961 100%)"></div>
+        <div class="card-preview-label">Da generare</div>
+      </div>
+      <div class="card-meta"><div class="card-status status-wip"><span class="status-dot"></span>Da creare</div><span class="card-type">Galleria · 3D</span></div>
+      <div class="card-name">3D Circle Gallery — Ristorante</div>
+      <div class="card-desc">Stessa struttura hotel ma con piatti, ambiente, vini. Palette terracotta/amber. Generabile in 1 comando.</div>
+      <div class="card-clients"><span class="client-tag">Ristorante</span><span class="client-tag">Pizzeria</span><span class="client-tag">Bar</span></div>
+      <div class="skill-cmd" onclick="copySkill('/demo-3d-effect ristorante')"><code>/demo-3d-effect ristorante</code><span class="skill-cmd-copy">copia</span></div>
+      <div class="card-actions">
+        <button class="action-btn primary" onclick="copySkill('/demo-3d-effect ristorante')">+ Genera ora</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="dmc travel tour operator hotel wedding fotografo">
+      <div class="card-preview"><iframe src="demo-diagonal-carousel.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · Diagonale</span></div>
+      <div class="card-name">Diagonal Carousel</div>
+      <div class="card-desc">Foto disposte su diagonale con animazione spring CSS. Attiva al centro grande dritta, adiacenti scalate e ruotate. Keyboard/swipe/wheel.</div>
+      <div class="card-clients"><span class="client-tag">Wedding</span><span class="client-tag">Fotografo</span><span class="client-tag">DMC</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-diagonal-carousel.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-diagonal-carousel.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria navigazione" data-clients="immobiliare real estate agenzia">
+      <div class="card-preview"><iframe src="demo-vertical-carousel.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · Verticale</span></div>
+      <div class="card-name">Vertical Carousel</div>
+      <div class="card-desc">Stacked verticale con attiva al centro. Adiacenti scalate e sfumate. Sfondo cerchi decorativi. Keyboard/swipe/wheel. Ideale per listing immobiliare o catalogo prodotti.</div>
+      <div class="card-clients"><span class="client-tag">Immobiliare</span><span class="client-tag">Agenzia</span><span class="client-tag">Catalogo</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-vertical-carousel.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-vertical-carousel.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="spa wellness hotel beauty centro benessere">
+      <div class="card-preview"><iframe src="demo-cylinder-carousel.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · 3D Cilindro</span></div>
+      <div class="card-name">Cylinder Carousel</div>
+      <div class="card-desc">Foto su cilindro 3D CSS puro — rotate-Y + translateZ. Drag mouse, scroll, swipe. Label animata sull'attiva. Dark editorial aesthetic. Ideale per spa, beauty, hotel luxury.</div>
+      <div class="card-clients"><span class="client-tag">Spa</span><span class="client-tag">Wellness</span><span class="client-tag">Hotel Luxury</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-cylinder-carousel.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-cylinder-carousel.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="bar cocktail lounge nightlife ristorante">
+      <div class="card-preview"><iframe src="demo-tilted-carousel.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · Inclinata</span></div>
+      <div class="card-name">Tilted Carousel</div>
+      <div class="card-desc">Foto inclinate a sinistra/destra dal centro. Attiva dritta, adiacenti ruotate ±14°, scala decresce. Drag, swipe, scroll. Estetica editoriale. Ideale per bar, lounge, lifestyle.</div>
+      <div class="card-clients"><span class="client-tag">Bar</span><span class="client-tag">Cocktail</span><span class="client-tag">Lifestyle</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-tilted-carousel.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-tilted-carousel.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="hotel ristorante portfolio">
+      <div class="card-preview"><iframe src="demo-gallery-flip.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · Flip</span></div>
+      <div class="card-name">Gallery Flip · Wave</div>
+      <div class="card-desc">Grid 6×4 tile che si girano in onda 3D. Wave BFS da angolo o hover, flip singolo o mass-flip. Back mostra label dorata. Auto-wave ogni 5s.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Ristorante</span><span class="client-tag">Portfolio</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-gallery-flip.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-gallery-flip.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="galleria" data-clients="hotel spa ristorante">
+      <div class="card-preview"><iframe src="demo-accordion-cards.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Galleria · Accordion</span></div>
+      <div class="card-name">Accordion Cards</div>
+      <div class="card-desc">5 card orizzontali, flex 1→5.5 su hover, grayscale→color, shimmer sweep, label ruotata, contenuto fade-in. Keyboard ← →.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">SPA</span><span class="client-tag">Ristorante</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-accordion-cards.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 15 demo-accordion-cards.html')">⏺ Record</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ NAVIGAZIONE ════════════════════════════════════════════════════ -->
+  <div class="section-heading" id="navigazione">Navigazione <span class="section-count">1</span></div>
+  <div class="grid">
+
+    <div class="card" data-category="navigazione" data-clients="dmc agenzia hotel ecommerce">
+      <div class="card-preview"><iframe src="demo-mega-menu.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Menu · Mega</span></div>
+      <div class="card-name">Mega Menu Animato</div>
+      <div class="card-desc">Split-screen: link colonna sinistra con stagger + immagine featured destra che cambia al hover. clip-path open/close, ambient glow.</div>
+      <div class="card-clients"><span class="client-tag">DMC</span><span class="client-tag">Agenzia</span><span class="client-tag">Hotel</span><span class="client-tag">E-commerce</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-mega-menu.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-mega-menu.html')">⏺ Record</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ COMPARAZIONE ═══════════════════════════════════════════════════ -->
+  <div class="section-heading" id="comparazione">Comparazione · Before / After <span class="section-count">5</span></div>
+  <div class="grid">
+
+    <div class="card" data-category="comparazione" data-clients="hotel ristorante portfolio restyling">
+      <div class="card-preview"><iframe src="demo-before-after.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">B/A · Orizzontale</span></div>
+      <div class="card-name">Before / After — Hotel</div>
+      <div class="card-desc">Auto-oscillate + drag, badge risultati metrici, 3 coppie foto. Versione base da cui derivano tutte le varianti.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Ristorante</span><span class="client-tag">Portfolio</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-before-after.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-before-after.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="comparazione" data-clients="hotel portfolio luxury">
+      <div class="card-preview"><iframe src="demo-before-after-circle.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">B/A · Spotlight</span></div>
+      <div class="card-name">Before / After — Spotlight</div>
+      <div class="card-desc">Cerchio clip-path che segue il mouse rivela il "dopo". Idle drift automatico. Slider zoom per regolare dimensione cerchio.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Portfolio</span><span class="client-tag">Luxury</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-before-after-circle.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-before-after-circle.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="comparazione" data-clients="hotel ristorante mobile">
+      <div class="card-preview"><iframe src="demo-before-after-vertical.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">B/A · Verticale</span></div>
+      <div class="card-name">Before / After — Verticale</div>
+      <div class="card-desc">Split top/bottom con layout sidenav. Ottimale per mobile. Auto-oscillate identico alla versione orizzontale.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Mobile</span><span class="client-tag">Ristorante</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-before-after-vertical.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-before-after-vertical.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="comparazione" data-clients="agenzia hotel ristorante restyling">
+      <div class="card-preview"><iframe src="demo-before-after-siti.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">B/A · Siti Web</span></div>
+      <div class="card-name">Before / After — Siti Web</div>
+      <div class="card-desc">Vecchio sito vs nuovo sito. Statistiche risultati sulla destra: traffico +850%, posizione Google, prenotazioni.</div>
+      <div class="card-clients"><span class="client-tag">Agenzia</span><span class="client-tag">Hotel</span><span class="client-tag">Ristorante</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-before-after-siti.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-before-after-siti.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="comparazione" data-clients="immobiliare ristrutturazione luxury">
+      <div class="card-preview"><iframe src="demo-before-after-immobiliare.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">B/A · Immobiliare</span></div>
+      <div class="card-name">Before / After — Immobiliare</div>
+      <div class="card-desc">Ristrutturazione esterno/soggiorno/cucina. Badge valore di mercato, 3 coppie. Per agenzie immobiliari e imprese edili.</div>
+      <div class="card-clients"><span class="client-tag">Immobiliare</span><span class="client-tag">Ristrutturazione</span><span class="client-tag">Luxury</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-before-after-immobiliare.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-before-after-immobiliare.html')">⏺ Record</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ PREZZI ══════════════════════════════════════════════════════════ -->
+  <div class="section-heading" id="prezzi">Prezzi <span class="section-count">5</span></div>
+  <div class="grid">
+
+    <div class="card" data-category="prezzi" data-clients="hotel spa saas agenzia ristorante">
+      <div class="card-preview"><iframe src="demo-pricing-luxury.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Pricing · Luxury</span></div>
+      <div class="card-name">Pricing Table Luxury</div>
+      <div class="card-desc">3 tier + toggle Bassa/Alta stagione. Count-up animato, featured card con glow pulsante, stagger entrance, hover lift.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Spa</span><span class="client-tag">SaaS</span><span class="client-tag">Agenzia</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-pricing-luxury.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-pricing-luxury.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="prezzi" data-clients="agenzia saas hotel ristorante">
+      <div class="card-preview"><iframe src="demo-pricing-comparison.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Pricing · Tabella</span></div>
+      <div class="card-name">Pricing Comparison Matrix</div>
+      <div class="card-desc">Tabella feature vs tiri. Righe = funzionalità, colonne = piani. Header sticky, gruppi, badge ✓/—/valore. Stile SaaS.</div>
+      <div class="card-clients"><span class="client-tag">Agenzia</span><span class="client-tag">SaaS</span><span class="client-tag">Hotel</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-pricing-comparison.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-pricing-comparison.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="prezzi" data-clients="hotel spa luxury resort">
+      <div class="card-preview"><iframe src="demo-pricing-showcase.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Pricing · Showcase</span></div>
+      <div class="card-name">Pricing Showcase Carousel</div>
+      <div class="card-desc">Un piano per schermata full-screen. Frecce + swipe + tastiera, counter laterale, ambient glow per piano, estetica cinematic.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Spa</span><span class="client-tag">Luxury</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-pricing-showcase.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-pricing-showcase.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="prezzi" data-clients="hotel spa luxury resort">
+      <div class="card-preview"><iframe src="demo-pricing-editorial.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Pricing · Editorial</span></div>
+      <div class="card-name">Pricing Editorial Scroll</div>
+      <div class="card-desc">Snap-scroll 3 sezioni 100vh. Watermark prezzo gigante in background. Stagger reveal su scroll. Estetica magazine luxury.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Spa</span><span class="client-tag">Luxury</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-pricing-editorial.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 25 demo-pricing-editorial.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="prezzi" data-clients="hotel spa luxury resort">
+      <div class="card-preview"><iframe src="demo-pricing-float.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Pricing · 3D Float</span></div>
+      <div class="card-name">Pricing Float 3D</div>
+      <div class="card-desc">Carte 3D che tiltano verso il mouse. Click → arena scivola per centrare il piano attivo. Aurora background animato.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Luxury</span><span class="client-tag">Spa</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-pricing-float.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-pricing-float.html')">⏺ Record</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ COMPONENTI UI ══════════════════════════════════════════════════ -->
+  <div class="section-heading" id="componenti">Componenti UI <span class="section-count">8</span></div>
+  <div class="grid">
+
+    <div class="card" data-category="ui" data-clients="agenzia hotel tutti">
+      <div class="card-preview"><iframe src="demo-faq.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Componente · FAQ</span></div>
+      <div class="card-name">FAQ Accordion</div>
+      <div class="card-desc">8 domande, accordion CSS grid-rows (0fr→1fr), one-open logic, IntersectionObserver stagger reveal, rotate icon, gold active.</div>
+      <div class="card-clients"><span class="client-tag">Agenzia</span><span class="client-tag">Hotel</span><span class="client-tag">Tutti</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-faq.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-faq.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="ui" data-clients="agenzia portfolio tutti">
+      <div class="card-preview"><iframe src="demo-stats.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Componente · Stats</span></div>
+      <div class="card-name">Statistiche Animate</div>
+      <div class="card-desc">6 KPI con count-up rAF + ease cubica. Griglia 3×2, ghost numbers in background, stagger per colonna. +850% traffico, ×3.2 prenotazioni.</div>
+      <div class="card-clients"><span class="client-tag">Agenzia</span><span class="client-tag">Portfolio</span><span class="client-tag">Tutti</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-stats.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 15 demo-stats.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="ui" data-clients="hotel ristorante tutti">
+      <div class="card-preview"><iframe src="demo-testimonials.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Componente · Social Proof</span></div>
+      <div class="card-name">Testimonianze Animate</div>
+      <div class="card-desc">Carousel clienti, auto-avanza ogni 5s, pausa su hover. 6 recensioni realistiche, avatar lettere, dots + frecce + swipe.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Ristorante</span><span class="client-tag">Tutti</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-testimonials.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 20 demo-testimonials.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="ui" data-clients="hotel spa dmc">
+      <div class="card-preview"><iframe src="demo-water-effect.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Effetto · SVG</span></div>
+      <div class="card-name">Water / Liquid Effect</div>
+      <div class="card-desc">SVG feTurbulence + feDisplacementMap. Mouse velocity → boost displacement. Click → ripple circle. Parallax floating text.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">SPA</span><span class="client-tag">DMC</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-water-effect.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 15 demo-water-effect.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="ui" data-clients="hotel spa dmc luxury agenzia sfondo background webgl three">
+      <div class="card-preview"><iframe src="demo-liquid-gradient.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Effetto · WebGL</span></div>
+      <div class="card-name">Liquid Gradient</div>
+      <div class="card-desc">Sfondo fluido Three.js. Domain-warp su simplex noise, 4 palette commutabili, deformazione e bagliore attorno al cursore (velocità mouse → boost warp).</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">SPA</span><span class="client-tag">Luxury</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-liquid-gradient.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 15 demo-liquid-gradient.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="ui" data-clients="hotel ristorante immobiliare">
+      <div class="card-preview"><iframe src="demo-dark-mode.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">UI · Tema</span></div>
+      <div class="card-name">Day / Night Mode Switch</div>
+      <div class="card-desc">Toggle ☀/🌙 con transizione CSS fluida. Token CSS per colori e ombre. Preferenza salvata in localStorage.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Ristorante</span><span class="client-tag">Immobiliare</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-dark-mode.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 22 demo-dark-mode.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="ui" data-clients="hotel ristorante">
+      <div class="card-preview"><iframe src="demo-dark-mode-v2.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">UI · Card</span></div>
+      <div class="card-name">Day / Night Mode · Card v2</div>
+      <div class="card-desc">Card orizzontale (foto sinistra, testo destra). Toggle pill centrato. Sfondo crema/dark. Variante dal riferimento Instagram.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Ristorante</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-dark-mode-v2.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 23 demo-dark-mode-v2.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="ui" data-clients="hotel ristorante dmc">
+      <div class="card-preview"><iframe src="demo-page-transition.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">UI · Transizione</span></div>
+      <div class="card-name">Page Transition · Feather</div>
+      <div class="card-desc">Piuma dorata SVG che vola tra sezioni. 5 sezioni full-screen snap. Scroll, tasto, frecce, dots laterali.</div>
+      <div class="card-clients"><span class="client-tag">Hotel</span><span class="client-tag">Ristorante</span><span class="client-tag">DMC</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-page-transition.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 21 demo-page-transition.html')">⏺ Record</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ CURSORE ════════════════════════════════════════════════════════ -->
+  <div class="section-heading" id="cursore">Cursore <span class="section-count">6</span></div>
+  <div class="grid">
+
+    <div class="card" data-category="cursore" data-clients="luxury tech creative">
+      <div class="card-preview"><iframe src="demo-cursor-variants.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Cursore · 4 varianti</span></div>
+      <div class="card-name">Cursor Variants · Hub</div>
+      <div class="card-desc">Rainbow · Fairy Dust dorato · Ink Drop · Neon — tutte e 4 in un demo con switcher in basso. Colori, fisica e stile cursore diversi per variante.</div>
+      <div class="card-clients"><span class="client-tag">Luxury</span><span class="client-tag">Tech</span><span class="client-tag">Creative</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-cursor-variants.html" target="_blank">↗ Apri Hub</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 25 demo-cursor-variants.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="cursore" data-clients="portfolio agency creativo">
+      <div class="card-preview"><iframe src="demo-cursor-trail.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Cursore · Canvas</span></div>
+      <div class="card-name">Cursor Trail · Colorful</div>
+      <div class="card-desc">Particelle colorate che seguono il cursore. Canvas 2D, hue ciclico HSL, fisica con gravità e drag, fade alpha. "Dipingi il sito".</div>
+      <div class="card-clients"><span class="client-tag">Portfolio</span><span class="client-tag">Agency</span><span class="client-tag">Creativo</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-cursor-trail.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 24 demo-cursor-trail.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="cursore" data-clients="agency creative">
+      <div class="card-preview"><iframe src="demo-cursor-rainbow.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Cursore · Rainbow</span></div>
+      <div class="card-name">Cursor · Rainbow Trail</div>
+      <div class="card-desc">Particelle HSL arcobaleno. Hue ciclico +1.8/frame. Sfondo nero, cursore bianco glowing. Per brand creativi e agenzie.</div>
+      <div class="card-clients"><span class="client-tag">Agency</span><span class="client-tag">Creative</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-cursor-rainbow.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 26 demo-cursor-rainbow.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="cursore" data-clients="luxury hotel">
+      <div class="card-preview"><iframe src="demo-cursor-fairydust.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Cursore · Oro</span></div>
+      <div class="card-name">Cursor · Fairy Dust</div>
+      <div class="card-desc">Polvere dorata — stelle e cerchi oro su sfondo scuro. Gravity 0.04. Per hotel di lusso e brand premium.</div>
+      <div class="card-clients"><span class="client-tag">Luxury</span><span class="client-tag">Hotel</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-cursor-fairydust.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 27 demo-cursor-fairydust.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="cursore" data-clients="studio editorial">
+      <div class="card-preview"><iframe src="demo-cursor-inkdrop.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Cursore · Inchiostro</span></div>
+      <div class="card-name">Cursor · Ink Drop</div>
+      <div class="card-desc">Gocce d'inchiostro scuro su sfondo crema. Ellisse, gravity forte 0.12. Per studi legali e brand artigianali.</div>
+      <div class="card-clients"><span class="client-tag">Studio</span><span class="client-tag">Editorial</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-cursor-inkdrop.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 28 demo-cursor-inkdrop.html')">⏺ Record</button>
+      </div>
+    </div>
+
+    <div class="card" data-category="cursore" data-clients="tech portfolio startup">
+      <div class="card-preview"><iframe src="demo-cursor-neon.html" loading="lazy"></iframe></div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Cursore · Neon</span></div>
+      <div class="card-name">Cursor · Neon Trail</div>
+      <div class="card-desc">Traccia neon cyan/viola su nero. No gravity, glow shadowBlur 20px. Per startup tech e portfolio digitali.</div>
+      <div class="card-clients"><span class="client-tag">Tech</span><span class="client-tag">Portfolio</span><span class="client-tag">Startup</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="demo-cursor-neon.html" target="_blank">↗ Apri</a>
+        <button class="action-btn" onclick="copyCmd('npm run record 29 demo-cursor-neon.html')">⏺ Record</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ FIGMA ══════════════════════════════════════════════════════════ -->
+  <div class="section-heading" id="figma">Figma · Progetti <span class="section-count">8</span></div>
+  <div class="grid">
+
+    <div class="card" data-category="figma" data-clients="pasticceria food showcase">
+      <div class="card-preview">
+        <iframe src="pie-slider/desktop.html" loading="lazy" style="width:420%;height:420%;transform:scale(.238);transform-origin:top left;pointer-events:none;border:none"></iframe>
+      </div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Figma · Desktop</span></div>
+      <div class="card-name">Circular Pie Slider — Desktop</div>
+      <div class="card-desc">Torta grande, etichette gusti a semicerchio sul bordo, colore per gusto, transizioni. 7 gusti. Ricreazione reel rgrimdesign.</div>
+      <div class="card-clients"><span class="client-tag">Pasticceria</span><span class="client-tag">Food</span><span class="client-tag">Showcase</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="pie-slider/desktop.html" target="_blank">↗ Apri</a>
+        <a class="action-btn" href="https://www.figma.com/design/ET6CZRer4tM31tiAjcv2aT" target="_blank">◆ Figma</a>
+      </div>
+    </div>
+
+    <div class="card" data-category="figma" data-clients="pasticceria food mobile">
+      <div class="card-preview">
+        <iframe src="pie-slider/index.html" loading="lazy" style="width:130%;height:130%;transform:scale(.769);transform-origin:top center;pointer-events:none;border:none"></iframe>
+      </div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Figma · Mobile</span></div>
+      <div class="card-name">Circular Pie Slider — Mobile</div>
+      <div class="card-desc">Versione telefono: anello completo di gusti attorno alla torta, etichette colorate, tap per cambiare. Ottimizzato touch.</div>
+      <div class="card-clients"><span class="client-tag">Mobile</span><span class="client-tag">Pasticceria</span><span class="client-tag">Food</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="pie-slider/index.html" target="_blank">↗ Apri</a>
+        <a class="action-btn" href="https://github.com/viktorialiubitskaya-coder/pie-slider" target="_blank">↗ GitHub</a>
+      </div>
+    </div>
+
+    <div class="card" data-category="figma" data-clients="pizzeria ristorante menu">
+      <div class="card-preview">
+        <iframe src="pizza-slider/desktop.html" loading="lazy" style="width:420%;height:420%;transform:scale(.238);transform-origin:top left;pointer-events:none;border:none"></iframe>
+      </div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Pizzeria · Desktop</span></div>
+      <div class="card-name">Forno Vivo — Menu Pizze (Desktop)</div>
+      <div class="card-desc">Menu circolare per pizzeria: 7 pizze con prezzo, etichette a semicerchio sul bordo, colore per gusto. Click sulla pizza.</div>
+      <div class="card-clients"><span class="client-tag">Pizzeria</span><span class="client-tag">Ristorante</span><span class="client-tag">Menu</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="pizza-slider/desktop.html" target="_blank">↗ Apri</a>
+        <a class="action-btn" href="https://github.com/viktorialiubitskaya-coder/pizza-slider" target="_blank">↗ GitHub</a>
+      </div>
+    </div>
+
+    <div class="card" data-category="figma" data-clients="pizzeria ristorante mobile">
+      <div class="card-preview">
+        <iframe src="pizza-slider/index.html" loading="lazy" style="width:130%;height:130%;transform:scale(.769);transform-origin:top center;pointer-events:none;border:none"></iframe>
+      </div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Pizzeria · Mobile</span></div>
+      <div class="card-name">Forno Vivo — Menu Pizze (Mobile)</div>
+      <div class="card-desc">Versione telefono: anello completo attorno alla pizza, prezzo, tap per cambiare. Ottimizzato touch.</div>
+      <div class="card-clients"><span class="client-tag">Mobile</span><span class="client-tag">Pizzeria</span><span class="client-tag">Menu</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="pizza-slider/index.html" target="_blank">↗ Apri</a>
+      </div>
+    </div>
+
+    <div class="card" data-category="figma" data-clients="jam food showcase">
+      <div class="card-preview">
+        <iframe src="jam-slider/index.html" loading="lazy" style="width:420%;height:420%;transform:scale(.238);transform-origin:top left;pointer-events:none;border:none"></iframe>
+      </div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Jam · Desktop</span></div>
+      <div class="card-name">Jam Slider — Desktop</div>
+      <div class="card-desc">Slider orizzontale di marmellate: titolo bold (nome + JAM.X outline), barattolo inclinato, frutta sparsa. 5 gusti. Reel rgrimdesign.</div>
+      <div class="card-clients"><span class="client-tag">Jam</span><span class="client-tag">Food</span><span class="client-tag">Showcase</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="jam-slider/index.html" target="_blank">↗ Apri</a>
+        <a class="action-btn" href="https://www.figma.com/design/ZW0nuPhCMmKlap4XoKVMs4" target="_blank">◆ Figma</a>
+      </div>
+    </div>
+
+    <div class="card" data-category="figma" data-clients="jam food mobile">
+      <div class="card-preview">
+        <iframe src="jam-slider/index.html" loading="lazy" style="width:130%;height:130%;transform:scale(.769);transform-origin:top center;pointer-events:none;border:none"></iframe>
+      </div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">Jam · Mobile</span></div>
+      <div class="card-name">Jam Slider — Mobile</div>
+      <div class="card-desc">Versione telefono: titolo + barattolo impilati, nav gusti, swipe. File responsive unico.</div>
+      <div class="card-clients"><span class="client-tag">Mobile</span><span class="client-tag">Jam</span><span class="client-tag">Food</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="jam-slider/index.html" target="_blank">↗ Apri</a>
+        <a class="action-btn" href="https://github.com/viktorialiubitskaya-coder/jam-slider" target="_blank">↗ GitHub</a>
+      </div>
+    </div>
+
+    <div class="card" data-category="figma" data-clients="cider bevande drink desktop">
+      <div class="card-preview">
+        <iframe src="cider-slider/index.html" loading="lazy" style="width:420%;height:420%;transform:scale(.238);transform-origin:top left;pointer-events:none;border:none"></iframe>
+      </div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">FreshZest · Desktop</span></div>
+      <div class="card-name">FreshZest — Cider Slider</div>
+      <div class="card-desc">Slider bevande: navbar, titolo bold, lattina centrale con glow, frutta che fluttua. 4 gusti. Reel rgrimdesign, testi IT.</div>
+      <div class="card-clients"><span class="client-tag">Bevande</span><span class="client-tag">Drink</span><span class="client-tag">Brand</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="cider-slider/index.html" target="_blank">↗ Apri</a>
+        <a class="action-btn" href="https://www.figma.com/design/7iD5HWVKBZXVzNSPnypPUh" target="_blank">◆ Figma</a>
+      </div>
+    </div>
+
+    <div class="card" data-category="figma" data-clients="cider bevande drink mobile">
+      <div class="card-preview">
+        <iframe src="cider-slider/index.html" loading="lazy" style="width:130%;height:130%;transform:scale(.769);transform-origin:top center;pointer-events:none;border:none"></iframe>
+      </div>
+      <div class="card-meta"><div class="card-status status-ready"><span class="status-dot"></span>Pronto</div><span class="card-type">FreshZest · Mobile</span></div>
+      <div class="card-name">FreshZest — Cider (Mobile)</div>
+      <div class="card-desc">Versione telefono: lattina + frutta fluttuante, swipe per cambiare gusto.</div>
+      <div class="card-clients"><span class="client-tag">Mobile</span><span class="client-tag">Bevande</span><span class="client-tag">Drink</span></div>
+      <div class="card-actions">
+        <a class="action-btn primary" href="cider-slider/index.html" target="_blank">↗ Apri</a>
+        <a class="action-btn" href="https://github.com/viktorialiubitskaya-coder/cider-slider" target="_blank">↗ GitHub</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ IN LISTA ══════════════════════════════════════════════════════ -->
+  <div class="section-heading" id="idee">In lista — da costruire</div>
+
+  <div class="idea-row">
+    <div style="width:32px;height:32px;background:linear-gradient(135deg,#0a1929,#1a5c8a,#38bdf8);border:1px solid var(--border);flex-shrink:0"></div>
+    <div class="idea-name">Interactive Map · Calabria DMC</div>
+    <div class="card-clients"><span class="client-tag">DMC</span><span class="client-tag">Tour Operator</span><span class="client-tag">Travel</span></div>
+  </div>
+
+</main>
+</div>
+
+<script>
+  fetch('/').then(() => {
+    document.getElementById('server-status').textContent = '● online'
+    document.getElementById('server-status').style.color = '#4aaa6a'
+  }).catch(() => {
+    document.getElementById('server-status').textContent = '○ offline'
+  })
+
+  function copySkill(cmd) {
+    navigator.clipboard.writeText(cmd)
+  }
+  function copyCmd(cmd) {
+    navigator.clipboard.writeText(cmd)
+  }
+
+  let activeFilter = 'all'
+
+  function setFilter(cat, btn) {
+    activeFilter = cat
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    applyFilters()
+  }
+
+  function applyFilters() {
+    const q = (document.getElementById('search').value || '').toLowerCase()
+    document.querySelectorAll('.card, .idea-row').forEach(card => {
+      const cat     = card.dataset.category || ''
+      const clients = card.dataset.clients  || ''
+      const text    = card.textContent.toLowerCase()
+      const matchCat    = activeFilter === 'all' || cat === activeFilter
+      const matchSearch = !q || text.includes(q) || clients.includes(q)
+      card.classList.toggle('hidden', !(matchCat && matchSearch))
+    })
+    // Show/hide section headings based on visible cards
+    document.querySelectorAll('.section-heading').forEach(heading => {
+      const section = heading.nextElementSibling
+      if (!section) return
+      const visibleCards = section.querySelectorAll('.card:not(.hidden)')
+      heading.style.display = (activeFilter === 'all' || visibleCards.length > 0) ? '' : 'none'
+    })
+  }
+
+  // Sidebar active link highlight on scroll
+  const sections = document.querySelectorAll('[id]')
+  const sidebarLinks = document.querySelectorAll('.sidebar-link[href^="#"]')
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        sidebarLinks.forEach(l => l.classList.remove('active'))
+        const active = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`)
+        if (active) active.classList.add('active')
+      }
+    })
+  }, { threshold: 0.3 })
+  sections.forEach(s => observer.observe(s))
+</script>
+</body>
+</html>

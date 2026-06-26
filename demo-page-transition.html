@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Leaf Sweep · Digital Evolution Italy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --oro:#c9a961;--oro-dim:rgba(201,169,97,0.3);
+  --bg:#050d18;--text:#f5f1e8;--dim:rgba(245,241,232,0.55);
+  --serif:Georgia,'Times New Roman',serif;--mono:'Courier New',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);overflow-x:hidden}
+
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:1.2rem 2.5rem;display:flex;justify-content:space-between;align-items:center;
+  background:linear-gradient(to bottom,rgba(5,13,24,.85),transparent);pointer-events:none;
+}
+.logo-a{font-size:.58rem;letter-spacing:.22em;text-transform:uppercase}
+.logo-b{font-size:.44rem;letter-spacing:.28em;text-transform:uppercase;color:var(--oro)}
+
+/* sections */
+.section{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.section-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.section-bg::after{content:'';position:absolute;inset:0;background:rgba(5,13,24,.48)}
+.s1 .section-bg{background-image:url('img/hotel-5.jpg')}
+.s2 .section-bg{background-image:url('img/ristorante/r-2.jpg')}
+.s3 .section-bg{background-image:url('img/hotel-3.jpg')}
+.s4 .section-bg{background-image:url('img/ristorante/r-9.jpg')}
+.s5 .section-bg{background-image:url('img/hotel-6.jpg')}
+.section::before{
+  content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(201,169,97,.025) 1px,transparent 1px);
+  background-size:44px 44px;
+}
+.section-inner{
+  position:relative;z-index:2;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:1rem;
+  max-width:680px;padding:2rem;
+  opacity:0;transform:translateY(36px);
+  transition:opacity .85s cubic-bezier(0.16,1,0.3,1),transform .85s cubic-bezier(0.16,1,0.3,1);
+}
+.section-inner.visible{opacity:1;transform:none}
+.s-num{font-size:.43rem;letter-spacing:.35em;text-transform:uppercase;color:var(--oro-dim)}
+.s-tag{font-size:.46rem;letter-spacing:.28em;text-transform:uppercase;color:var(--oro)}
+.s-title{font-family:var(--serif);font-weight:300;font-size:clamp(2rem,4.5vw,3.6rem);line-height:1.08}
+.s-title em{font-style:italic;color:var(--oro)}
+.s-line{width:36px;height:1px;background:var(--oro-dim)}
+.s-text{font-size:.6rem;letter-spacing:.06em;color:var(--dim);line-height:1.9;max-width:460px}
+.s-cta{
+  font-size:.44rem;letter-spacing:.2em;text-transform:uppercase;color:var(--oro);
+  border:1px solid var(--oro-dim);padding:.5rem 1.2rem;background:none;
+  font-family:var(--mono);cursor:pointer;transition:background .2s;
+}
+.s-cta:hover{background:rgba(201,169,97,.08)}
+
+/* ── LEAF ──────────────────────────────────────────────────
+   Two animations layered:
+   1. fall  — controls position (top → bottom) + base rotation
+   2. sway  — gentle left-right tilt on the leaf itself
+   ---------------------------------------------------------- */
+
+/* position + path: enters top, sways L-R while descending, exits bottom */
+@keyframes fall{
+  0%  { transform:translate(62vw,-160px) rotate(22deg);  opacity:0 }
+  4%  { opacity:1 }
+  20% { transform:translate(38vw,18vh)  rotate(-14deg) }
+  40% { transform:translate(58vw,40vh)  rotate(18deg)  }
+  60% { transform:translate(32vw,62vh)  rotate(-10deg) }
+  80% { transform:translate(54vw,85vh)  rotate(20deg)  }
+  92% { transform:translate(42vw,108vh) rotate(-8deg); opacity:1 }
+  96% { opacity:0 }
+  97%,100%{ transform:translate(62vw,-160px) rotate(22deg); opacity:0 }
+}
+
+/* leaf self-rotation (spin + wobble as it falls) */
+@keyframes spin{
+  0%,100%{ transform:rotate(0deg)   scaleX(1) }
+  25%    { transform:rotate(8deg)   scaleX(.96) }
+  50%    { transform:rotate(-6deg)  scaleX(1.03) }
+  75%    { transform:rotate(9deg)   scaleX(.97) }
+}
+
+.leaf-wrap{
+  position:fixed;top:0;left:0;z-index:50;pointer-events:none;
+  animation:fall 11s ease-in-out infinite;
+  animation-delay:.8s;
+}
+.leaf-inner{
+  animation:spin 1.9s ease-in-out infinite;
+  transform-origin:50% 60%;
+}
+.leaf-svg{
+  width:clamp(70px,9vw,130px);
+  filter:
+    drop-shadow(0 0 18px rgba(201,169,97,.7))
+    drop-shadow(0 4px 12px rgba(0,0,0,.55));
+}
+
+/* tag */
+.tag{
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:200;font-size:.44rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+  border:1px solid rgba(201,169,97,.13);padding:.28rem .55rem;
+  background:rgba(5,13,24,.88);backdrop-filter:blur(8px);
+}
+.tag span{color:var(--oro)}
+</style>
+</head>
+<body>
+
+<!-- ── LEAF SVG ───────────────────────────────────────────── -->
+<div class="leaf-wrap">
+  <div class="leaf-inner">
+    <svg class="leaf-svg" viewBox="0 0 80 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- leaf body — egg-shaped, pointed tip at top -->
+      <path d="M40 4
+               C55 8 70 26 70 52
+               C70 78 58 98 40 106
+               C22 98 10 78 10 52
+               C10 26 25 8 40 4 Z"
+        fill="rgba(201,169,97,0.72)"
+        stroke="rgba(201,169,97,0.4)"
+        stroke-width=".8"
+      />
+      <!-- inner glow layer -->
+      <path d="M40 10
+               C52 14 64 30 64 52
+               C64 74 54 92 40 100
+               C26 92 16 74 16 52
+               C16 30 28 14 40 10 Z"
+        fill="rgba(220,185,110,0.18)"
+      />
+      <!-- central vein -->
+      <line x1="40" y1="6"  x2="40" y2="104" stroke="rgba(255,240,170,0.65)" stroke-width="1" stroke-linecap="round"/>
+      <!-- left veins -->
+      <path d="M40 30 Q26 40 16 44" stroke="rgba(255,240,170,0.38)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+      <path d="M40 46 Q24 56 13 62" stroke="rgba(255,240,170,0.35)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+      <path d="M40 62 Q25 72 15 76" stroke="rgba(255,240,170,0.30)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+      <path d="M40 76 Q28 84 20 88" stroke="rgba(255,240,170,0.24)" stroke-width=".7" fill="none" stroke-linecap="round"/>
+      <!-- right veins -->
+      <path d="M40 30 Q54 40 64 44" stroke="rgba(255,240,170,0.38)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+      <path d="M40 46 Q56 56 67 62" stroke="rgba(255,240,170,0.35)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+      <path d="M40 62 Q55 72 65 76" stroke="rgba(255,240,170,0.30)" stroke-width=".8" fill="none" stroke-linecap="round"/>
+      <path d="M40 76 Q52 84 60 88" stroke="rgba(255,240,170,0.24)" stroke-width=".7" fill="none" stroke-linecap="round"/>
+      <!-- stem -->
+      <path d="M40 106 C38 112 37 118 38 124" stroke="rgba(201,169,97,0.55)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    </svg>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <div><p class="logo-a">Digital Evolution</p><p class="logo-b">Italy · Leaf Sweep</p></div>
+</nav>
+
+<!-- Sections -->
+<section class="section s1">
+  <div class="section-bg"></div>
+  <div class="section-inner">
+    <span class="s-num">01 / 05</span>
+    <p class="s-tag">Hotel · Calabria</p>
+    <h2 class="s-title">Il mare. Il sole.<br><em>La tua estate.</em></h2>
+    <div class="s-line"></div>
+    <p class="s-text">Strutture esclusive affacciate sul Tirreno. Servizi premium, suite panoramiche e un'ospitalità che non si dimentica.</p>
+    <button class="s-cta">Scopri le suite →</button>
+  </div>
+</section>
+
+<section class="section s2">
+  <div class="section-bg"></div>
+  <div class="section-inner">
+    <span class="s-num">02 / 05</span>
+    <p class="s-tag">Ristorante · Cucina</p>
+    <h2 class="s-title">Sapori <em>autentici</em><br>della Calabria.</h2>
+    <div class="s-line"></div>
+    <p class="s-text">Ingredienti locali, ricette di famiglia, vini del territorio. Un viaggio gastronomico tra tradizione e innovazione.</p>
+    <button class="s-cta">Il nostro menù →</button>
+  </div>
+</section>
+
+<section class="section s3">
+  <div class="section-bg"></div>
+  <div class="section-inner">
+    <span class="s-num">03 / 05</span>
+    <p class="s-tag">Wellness · Benessere</p>
+    <h2 class="s-title">Riposa.<br><em>Rigenerati.</em></h2>
+    <div class="s-line"></div>
+    <p class="s-text">Spa, piscine e percorsi benessere nella natura calabrese. Un'oasi dove corpo e mente trovano equilibrio.</p>
+    <button class="s-cta">Prenota la spa →</button>
+  </div>
+</section>
+
+<section class="section s4">
+  <div class="section-bg"></div>
+  <div class="section-inner">
+    <span class="s-num">04 / 05</span>
+    <p class="s-tag">Esperienze · Tour</p>
+    <h2 class="s-title">Scopri la <em>vera</em><br>Calabria.</h2>
+    <div class="s-line"></div>
+    <p class="s-text">Escursioni, degustazioni, tour culturali. Itinerari su misura tra borghi antichi, parchi e coste mozzafiato.</p>
+    <button class="s-cta">Vedi le esperienze →</button>
+  </div>
+</section>
+
+<section class="section s5">
+  <div class="section-bg"></div>
+  <div class="section-inner">
+    <span class="s-num">05 / 05</span>
+    <p class="s-tag">Prenota · Book</p>
+    <h2 class="s-title"><em>La tua vacanza</em><br>inizia qui.</h2>
+    <div class="s-line"></div>
+    <p class="s-text">Disponibilità immediata, prezzi trasparenti, conferma istantanea. Il soggiorno perfetto a due click di distanza.</p>
+    <button class="s-cta">Prenota ora →</button>
+  </div>
+</section>
+
+<div class="tag">Effetto: <span>Leaf Sweep</span> · Digital Evolution Italy</div>
+
+<script>
+const obs = new IntersectionObserver(
+  es => es.forEach(e => e.isIntersecting && e.target.classList.add('visible')),
+  {threshold:.25}
+)
+document.querySelectorAll('.section-inner').forEach(el => obs.observe(el))
+
+window.addEventListener('scroll', () => {
+  const y = window.scrollY
+  document.querySelectorAll('.section').forEach(sec => {
+    const bg = sec.querySelector('.section-bg')
+    if (bg) bg.style.transform = `translateY(${(y - sec.offsetTop) * .22}px)`
+  })
+}, {passive:true})
+</script>
+</body>
+</html>

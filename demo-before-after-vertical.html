@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Before / After Vertical · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#050d18; --oro:#c9a961; --text:#f5f1e8; --dim:rgba(245,241,232,0.45);
+    --serif:Georgia,serif; --mono:'Courier New',monospace; --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  html, body { height:100%; background:var(--bg); overflow:hidden; }
+
+  .stage {
+    position:relative; width:100vw; height:100vh;
+    overflow:hidden; cursor:ns-resize;
+    user-select:none; -webkit-user-select:none;
+  }
+
+  .pair { position:absolute; inset:0; opacity:0; transition:opacity 0.55s ease; pointer-events:none; }
+  .pair.is-active { opacity:1; pointer-events:auto; }
+
+  .img-before, .img-after {
+    position:absolute; inset:0;
+    background-size:cover; background-position:center;
+    will-change:clip-path;
+  }
+  .img-before { filter:grayscale(0.25) brightness(0.88); }
+
+  /* horizontal divider */
+  .divider {
+    position:absolute; left:0; right:0; top:50%;
+    height:2px;
+    background:linear-gradient(to right, transparent, var(--oro) 10%, var(--oro) 90%, transparent);
+    z-index:10; pointer-events:none; will-change:top;
+  }
+
+  /* handle — horizontal bar */
+  .handle {
+    position:absolute; left:50%; top:0;
+    transform:translate(-50%,-50%);
+    width:64px; height:36px;
+    border:1.5px solid var(--oro);
+    background:rgba(5,13,24,0.88);
+    backdrop-filter:blur(12px);
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    z-index:11; cursor:ns-resize;
+    transition:transform 0.2s var(--ease), box-shadow 0.2s;
+    box-shadow:0 0 0 0 rgba(201,169,97,0);
+  }
+  .stage.dragging .handle {
+    transform:translate(-50%,-50%) scale(1.1);
+    box-shadow:0 0 0 6px rgba(201,169,97,0.12);
+  }
+  .h-arr { color:var(--oro); font-size:0.65rem; line-height:1; }
+
+  /* labels */
+  .lbl {
+    position:absolute; z-index:15; left:50%; transform:translateX(-50%);
+    font-family:var(--mono); font-size:0.48rem; letter-spacing:0.28em; text-transform:uppercase;
+    padding:0.28rem 0.6rem; border:1px solid; backdrop-filter:blur(6px); pointer-events:none;
+    transition:opacity 0.3s; white-space:nowrap;
+  }
+  .lbl-before { top:2rem; color:var(--dim); border-color:rgba(245,241,232,0.12); background:rgba(5,13,24,0.6); }
+  .lbl-after  { bottom:2rem; color:var(--oro); border-color:rgba(201,169,97,0.28); background:rgba(5,13,24,0.6); }
+
+  /* edge fades top/bottom */
+  .edge-t, .edge-b { position:absolute; left:0; right:0; height:80px; z-index:8; pointer-events:none; }
+  .edge-t { top:0; background:linear-gradient(to bottom, rgba(5,13,24,0.45), transparent); }
+  .edge-b { bottom:0; background:linear-gradient(to top, rgba(5,13,24,0.45), transparent); }
+
+  /* side bars */
+  .left-bar {
+    position:absolute; left:0; top:0; bottom:0; z-index:20;
+    padding:2rem 1.75rem;
+    background:linear-gradient(to right, rgba(5,13,24,0.88) 0%, transparent);
+    display:flex; flex-direction:column; justify-content:space-between;
+    pointer-events:none; width:260px;
+  }
+  .logo { display:flex; flex-direction:column; line-height:1.25; }
+  .logo-a { font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text); font-family:var(--mono); }
+  .logo-b { font-size:0.46rem; letter-spacing:0.26em; text-transform:uppercase; color:var(--oro); font-family:var(--mono); }
+
+  .pair-info { display:flex; flex-direction:column; gap:0.4rem; }
+  .pair-title { font-family:var(--serif); font-size:1.5rem; font-weight:300; color:var(--text); line-height:1; transition:opacity 0.3s, transform 0.4s var(--ease); }
+  .pair-title.sw { opacity:0; transform:translateY(6px); }
+  .pair-result { font-family:var(--mono); font-size:0.5rem; letter-spacing:0.1em; color:var(--dim); transition:opacity 0.3s, transform 0.4s var(--ease); line-height:1.5; }
+  .pair-result .h { color:var(--oro); display:block; margin-top:0.2rem; }
+  .pair-result.sw { opacity:0; transform:translateY(6px); }
+
+  .tabs { display:flex; flex-direction:column; gap:2px; pointer-events:auto; }
+  .tab {
+    display:flex; align-items:center; gap:0.45rem;
+    padding:0.4rem 0.7rem;
+    font-family:var(--mono); font-size:0.5rem; letter-spacing:0.12em; text-transform:uppercase;
+    background:rgba(5,13,24,0.7); border:1px solid rgba(245,241,232,0.1); color:var(--dim);
+    cursor:pointer; transition:all 0.25s; backdrop-filter:blur(8px);
+  }
+  .tab:hover { color:var(--text); border-color:rgba(245,241,232,0.22); }
+  .tab.is-active { color:var(--oro); border-color:rgba(201,169,97,0.4); }
+  .tab-dot { width:4px; height:4px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+  .tag { position:absolute; top:1.75rem; right:2rem; z-index:25; font-family:var(--mono); font-size:0.44rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--dim); border:1px solid rgba(201,169,97,0.15); padding:0.28rem 0.55rem; background:rgba(10,25,41,0.7); backdrop-filter:blur(8px); pointer-events:none; }
+  .tag span { color:var(--oro); }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <div class="pair is-active" id="pair-0">
+    <div class="img-before" style="background-image:url(img/ba/ba-lobby-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/ba/ba-lobby-after.jpg)"></div>
+  </div>
+  <div class="pair" id="pair-1">
+    <div class="img-before" style="background-image:url(img/ba/ba-rest-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/ba/ba-rest-after.jpg)"></div>
+  </div>
+  <div class="pair" id="pair-2">
+    <div class="img-before" style="background-image:url(img/ba/ba-room-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/ba/ba-room-after.jpg)"></div>
+  </div>
+
+  <div class="divider" id="divider">
+    <div class="handle" id="handle">
+      <span class="h-arr">↑</span><span class="h-arr">↓</span>
+    </div>
+  </div>
+
+  <div class="lbl lbl-before" id="lbl-b">Prima</div>
+  <div class="lbl lbl-after"  id="lbl-a">Dopo</div>
+  <div class="edge-t"></div><div class="edge-b"></div>
+
+  <div class="left-bar">
+    <div class="logo"><span class="logo-a">Digital Evolution</span><span class="logo-b">Italy · Vertical</span></div>
+    <div class="pair-info">
+      <div class="pair-title"  id="pair-title">Lobby Hotel</div>
+      <div class="pair-result" id="pair-result">Invisibile online<span class="h">+180% prenotazioni dirette</span></div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab is-active" data-pair="0"><span class="tab-dot"></span>Lobby Hotel</button>
+      <button class="tab" data-pair="1"><span class="tab-dot"></span>Ristorante</button>
+      <button class="tab" data-pair="2"><span class="tab-dot"></span>Camera Luxury</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="tag">Effetto: <span>Before / After Vertical</span> · Digital Evolution Italy</div>
+
+<script>
+const PAIRS = [
+  { name:'Lobby Hotel',   result:'Invisibile online<span class="h">+180% prenotazioni dirette</span>' },
+  { name:'Ristorante',    result:'Solo Facebook<span class="h">+240% coperti prenotati online</span>' },
+  { name:'Camera Luxury', result:'Foto di bassa qualità<span class="h">RevPAR +65% in 6 mesi</span>' },
+]
+
+const stage   = document.getElementById('stage')
+const divider = document.getElementById('divider')
+const lblB    = document.getElementById('lbl-b')
+const lblA    = document.getElementById('lbl-a')
+const title   = document.getElementById('pair-title')
+const res     = document.getElementById('pair-result')
+const tabs    = document.querySelectorAll('.tab')
+const pairs   = document.querySelectorAll('.pair')
+
+let splitT = 50, splitC = 12, dragging = false, activePair = 0, time = 0
+
+function pct(e) {
+  const rect = stage.getBoundingClientRect()
+  const cy = e.touches ? e.touches[0].clientY : e.clientY
+  return Math.max(5, Math.min(95, ((cy - rect.top) / rect.height) * 100))
+}
+
+stage.addEventListener('mousedown',  e => { dragging=true; stage.classList.add('dragging'); splitT=pct(e) })
+stage.addEventListener('touchstart', e => { dragging=true; stage.classList.add('dragging'); splitT=pct(e) }, {passive:true})
+window.addEventListener('mousemove',  e => { if(dragging) splitT=pct(e) })
+window.addEventListener('touchmove',  e => { if(dragging) splitT=pct(e) }, {passive:true})
+window.addEventListener('mouseup',    () => { dragging=false; stage.classList.remove('dragging') })
+window.addEventListener('touchend',   () => { dragging=false; stage.classList.remove('dragging') })
+
+function setPair(idx) {
+  if(idx===activePair) return; activePair=idx
+  title.classList.add('sw'); res.classList.add('sw')
+  setTimeout(() => {
+    title.textContent = PAIRS[idx].name
+    res.innerHTML     = PAIRS[idx].result
+    title.classList.remove('sw'); res.classList.remove('sw')
+  }, 220)
+  pairs.forEach((p,i) => p.classList.toggle('is-active', i===idx))
+  tabs.forEach((t,i)  => t.classList.toggle('is-active', i===idx))
+  splitT=50; splitC=50
+}
+tabs.forEach(t => t.addEventListener('click', () => setPair(+t.dataset.pair)))
+
+function tick() {
+  if(!dragging && Math.abs(splitC-50)<3 && time>120) { time++; splitT=50+Math.sin(time*0.011)*33 }
+  else if(!dragging && time<=120) time++
+
+  splitC += (splitT - splitC) * 0.09
+
+  // vertical: after = bottom portion → clip top
+  const after = pairs[activePair].querySelector('.img-after')
+  after.style.clipPath = `inset(${splitC}% 0 0 0)`
+
+  divider.style.top = splitC + '%'
+
+  lblB.style.opacity = Math.min(1, splitC/15).toFixed(3)
+  lblA.style.opacity = Math.min(1, (100-splitC)/15).toFixed(3)
+
+  requestAnimationFrame(tick)
+}
+tick()
+</script>
+</body>
+</html>

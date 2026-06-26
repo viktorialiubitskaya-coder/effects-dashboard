@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Circular Gallery · Digital Evolution Italy</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --oro:#c9a961;--oro-dim:rgba(201,169,97,0.4);
+    --text:#f5f1e8;--dim:rgba(245,241,232,0.55);--muted:rgba(245,241,232,0.25);
+    --serif:Georgia,'Times New Roman',serif;--mono:'Courier New',monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  html,body{height:100%;overflow:hidden;font-family:var(--mono);color:var(--text);
+    background:radial-gradient(120% 90% at 50% 30%, #1c1410 0%, #120c0a 45%, #070504 100%)}
+  .glow{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(42% 42% at 50% 50%, rgba(201,169,97,.16), transparent 70%)}
+
+  /* fondale: foto attiva a pieno schermo */
+  #bg{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background-size:cover;background-position:center;
+    opacity:0;transform:scale(1.08);transition:opacity .8s var(--ease),transform 6s linear}
+  #bg.on{opacity:1;transform:scale(1)}
+  #bg::after{content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(7,5,4,.55),rgba(7,5,4,.2) 35%,rgba(7,5,4,.78))}
+
+  #scene{position:fixed;inset:0;z-index:2;
+    perspective:1500px;perspective-origin:50% 50%;
+    cursor:grab;touch-action:none;display:flex;align-items:center;justify-content:center}
+  #scene.drag{cursor:grabbing}
+  #scene.dim #wheel{opacity:.42;filter:saturate(.85)}
+  #wheel{position:absolute;top:50%;left:50%;width:0;height:0;
+    transform-style:preserve-3d;will-change:transform;transition:opacity .6s,filter .6s}
+  .card{position:absolute;top:0;left:0;
+    width:128px;height:180px;margin:-90px 0 0 -64px;
+    border-radius:10px;overflow:hidden;backface-visibility:hidden;cursor:pointer;
+    box-shadow:0 18px 40px rgba(0,0,0,.55);
+    border:1px solid rgba(255,255,255,.12);background:#140d0a;
+    transition:box-shadow .35s,border-color .35s}
+  .card img{width:100%;height:100%;object-fit:cover;display:block}
+  .card::after{content:'';position:absolute;inset:0;
+    background:linear-gradient(150deg,rgba(255,255,255,.16),transparent 42%),
+               linear-gradient(0deg,rgba(0,0,0,.35),transparent 60%)}
+  .card.active{border-color:var(--oro);box-shadow:0 0 0 2px var(--oro),0 22px 50px rgba(0,0,0,.6)}
+  @media(max-width:640px){.card{width:96px;height:135px;margin:-67px 0 0 -48px}}
+
+  /* hub centrale upright */
+  .hub{position:fixed;z-index:6;top:50%;left:50%;transform:translate(-50%,-50%);
+    text-align:center;pointer-events:none}
+  .hub-ring{width:150px;height:150px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--oro-dim);
+    background:radial-gradient(circle, rgba(12,8,6,.82), rgba(12,8,6,.32));
+    backdrop-filter:blur(3px);box-shadow:0 0 50px rgba(0,0,0,.5),inset 0 0 30px rgba(201,169,97,.08)}
+  .hub-ring span{font-family:var(--serif);font-style:italic;font-weight:300;
+    font-size:1.5rem;line-height:1.05;color:#fff}
+  .hub-ring em{color:var(--oro)}
+  @media(max-width:640px){.hub-ring{width:116px;height:116px}.hub-ring span{font-size:1.15rem}}
+
+  .nav{position:fixed;top:0;left:0;right:0;z-index:20;padding:1.3rem 2rem;
+    display:flex;justify-content:space-between;
+    background:linear-gradient(to bottom,rgba(7,5,4,.55),transparent);pointer-events:none}
+  .logo-a{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase}
+  .logo-b{font-size:.46rem;letter-spacing:.28em;text-transform:uppercase;color:var(--oro)}
+  .head{position:fixed;top:5.5rem;left:0;right:0;z-index:10;text-align:center;pointer-events:none}
+  .h-pre{font-size:.5rem;letter-spacing:.42em;text-transform:uppercase;color:var(--oro);
+    opacity:0;animation:fu .8s .3s var(--ease) forwards}
+  @keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  .hint{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:20;
+    font-size:.46rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    animation:pulse 3s ease-in-out infinite;pointer-events:none}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.85}}
+  .tag{position:fixed;bottom:1.5rem;right:1.5rem;z-index:50;font-size:.44rem;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+    border:1px solid rgba(201,169,97,.18);padding:.28rem .55rem;border-radius:2px}
+  .close{position:fixed;top:1.2rem;right:1.4rem;z-index:60;width:38px;height:38px;
+    border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.35);
+    color:#fff;font-size:1rem;cursor:pointer;backdrop-filter:blur(6px);
+    opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;transform:scale(.8)}
+  .close.on{opacity:1;pointer-events:auto;transform:scale(1)}
+  .close:hover{border-color:var(--oro);color:var(--oro)}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div id="bg"></div>
+<div id="scene"><div id="wheel"></div></div>
+
+<div class="hub"><div class="hub-ring"><span><em>Circular</em><br>Gallery</span></div></div>
+
+<div class="nav">
+  <div class="logo-a">Digital Evolution</div>
+  <div class="logo-b">Circular Gallery</div>
+</div>
+<div class="head"><div class="h-pre">HTML · CSS · JS · 3D Ring</div></div>
+
+<button class="close" id="close">✕</button>
+<div class="hint">Trascina per ruotare · clicca una foto per lo sfondo</div>
+<div class="tag">Effetto · 3D Wheel</div>
+
+<script>
+const COUNT = 12;                                  // = foto yacht
+const TILT = 16;                                   // ruota quasi verticale (leggera profondità)
+const RADIUS = Math.min(window.innerWidth, 900) < 700 ? 150 : 280;
+const STEP = 360 / COUNT;
+
+const wheel = document.getElementById('wheel');
+const scene = document.getElementById('scene');
+const bg    = document.getElementById('bg');
+const closeBtn = document.getElementById('close');
+
+const cards = [];
+for (let i = 0; i < COUNT; i++){
+  const a = i * STEP;
+  const src = `img/yacht/y-${i+1}.jpg`;
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.dataset.src = src;
+  el.innerHTML = `<img src="${src}" alt="" loading="eager"/>`;
+  el.style.transform = `rotateZ(${a}deg) translateY(${-RADIUS}px)`;  // petali radiali, anello verticale
+  wheel.appendChild(el);
+  cards.push(el);
+}
+
+// ── rotazione ──
+let rot = 0, vel = 0.16;
+const AUTO = 0.16;
+let dragging = false, lastX = 0, moved = 0;
+
+function render(){ wheel.style.transform = `rotateX(${TILT}deg) rotateZ(${rot}deg)`; }
+function loop(){
+  requestAnimationFrame(loop);
+  rot += vel;
+  if (!dragging) vel += (AUTO - vel) * 0.03;
+  render();
+}
+render(); loop();
+
+function down(x){ dragging=true; lastX=x; moved=0; scene.classList.add('drag'); }
+function move(x){ if(!dragging) return; const dx=x-lastX; moved+=Math.abs(dx); vel=dx*0.32; rot+=dx*0.32; lastX=x; }
+function up(){ dragging=false; scene.classList.remove('drag'); }
+
+scene.addEventListener('pointerdown', e=>down(e.clientX));
+window.addEventListener('pointermove', e=>move(e.clientX));
+window.addEventListener('pointerup', up);
+scene.addEventListener('touchstart', e=>{ if(e.touches[0]) down(e.touches[0].clientX); }, {passive:true});
+window.addEventListener('touchmove', e=>{ if(e.touches[0]) move(e.touches[0].clientX); }, {passive:true});
+window.addEventListener('touchend', up);
+scene.addEventListener('wheel', e=>{ e.preventDefault(); vel=e.deltaY*0.04; }, {passive:false});
+
+// ── click foto → sfondo a pieno schermo ──
+function setBg(el){
+  cards.forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  bg.style.backgroundImage = `url("${el.dataset.src}")`;
+  bg.classList.add('on');
+  scene.classList.add('dim');
+  closeBtn.classList.add('on');
+}
+function clearBg(){
+  bg.classList.remove('on');
+  scene.classList.remove('dim');
+  closeBtn.classList.remove('on');
+  cards.forEach(c=>c.classList.remove('active'));
+}
+cards.forEach(el=>{
+  el.addEventListener('click', ()=>{ if(moved < 6) setBg(el); });   // ignora se è stato un drag
+});
+closeBtn.addEventListener('click', clearBg);
+</script>
+</body>
+</html>

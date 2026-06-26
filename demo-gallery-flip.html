@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gallery Flip · Ristorante · Digital Evolution Italy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --oro:#c9a961;--oro-dim:rgba(201,169,97,0.35);
+  --bg:#050d18;
+  --text:#f5f1e8;--dim:rgba(245,241,232,0.5);
+  --serif:Georgia,'Times New Roman',serif;--mono:'Courier New',monospace;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);overflow-x:hidden}
+
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.ab{position:absolute;border-radius:50%}
+.ab-1{width:800px;height:500px;top:-150px;left:-180px;
+  background:radial-gradient(ellipse,rgba(140,60,10,1) 0%,transparent 65%);
+  filter:blur(110px);opacity:0.06;animation:ab1 55s ease-in-out infinite alternate}
+.ab-2{width:600px;height:600px;bottom:-200px;right:-100px;
+  background:radial-gradient(ellipse,rgba(26,80,160,1) 0%,transparent 65%);
+  filter:blur(100px);opacity:0.05;animation:ab2 68s ease-in-out infinite alternate;animation-delay:-25s}
+@keyframes ab1{from{transform:translate(0,0)}to{transform:translate(70px,50px)}}
+@keyframes ab2{from{transform:translate(0,0)}to{transform:translate(-60px,-45px)}}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:50;padding:1.2rem 2rem;
+  display:flex;justify-content:space-between;
+  background:linear-gradient(to bottom,rgba(5,13,24,.9),transparent);pointer-events:none}
+.logo-a{font-size:.58rem;letter-spacing:.22em;text-transform:uppercase}
+.logo-b{font-size:.44rem;letter-spacing:.28em;text-transform:uppercase;color:var(--oro)}
+
+.page{position:relative;z-index:1;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:5rem 1.5rem 4rem}
+
+.header{text-align:center;margin-bottom:2.5rem}
+.h-pre{font-size:.46rem;letter-spacing:.32em;text-transform:uppercase;color:var(--oro);margin-bottom:.6rem}
+.h-title{font-family:var(--serif);font-weight:300;font-size:clamp(1.8rem,3.5vw,2.8rem);line-height:1.1;margin-bottom:.5rem}
+.h-sub{font-size:.52rem;letter-spacing:.07em;color:var(--dim)}
+
+.grid-wrap{width:min(95vw,880px)}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;width:100%}
+
+/* Tile */
+.tile{
+  aspect-ratio:4/3;
+  position:relative;
+  cursor:pointer;
+  transform-style:preserve-3d;
+  transition:transform 0.5s ease;
+}
+.grid-wrap{perspective:1400px}
+.tile.flipped{transform:rotateY(180deg)}
+
+.layer-front,
+.layer-back{
+  position:absolute;inset:0;
+  background-size:cover;
+  background-repeat:no-repeat;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+.layer-back{transform:rotateY(180deg)}
+
+.tile:hover .layer-front{filter:brightness(1.12)}
+
+.tag{position:fixed;bottom:1.5rem;right:1.5rem;z-index:50;font-size:.44rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+  border:1px solid rgba(201,169,97,.13);padding:.28rem .55rem;
+  background:rgba(5,13,24,.85);backdrop-filter:blur(8px)}
+.tag span{color:var(--oro)}
+</style>
+</head>
+<body>
+<div class="aurora"><div class="ab ab-1"></div><div class="ab ab-2"></div></div>
+<nav class="nav">
+  <div><p class="logo-a">Digital Evolution</p><p class="logo-b">Italy · Gallery</p></div>
+</nav>
+
+<div class="page">
+  <div class="header">
+    <p class="h-pre">Cucina · Sapori · Calabria</p>
+    <h1 class="h-title">La nostra cucina.<br><em style="font-style:italic;color:var(--oro)">Piatto per piatto.</em></h1>
+    <p class="h-sub">Clicca su un piatto per scoprirlo</p>
+  </div>
+  <div class="grid-wrap">
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="tag">Effetto: <span>Gallery Expand</span> · Digital Evolution Italy</div>
+
+<script>
+const ROWS = 4, COLS = 6
+
+const PHOTOS = [
+  ['img/ristorante/r-1.jpg',  '50% 30%'],
+  ['img/ristorante/r-2.jpg',  '50% 50%'],
+  ['img/ristorante/r-3.jpg',  '40% 60%'],
+  ['img/ristorante/r-4.jpg',  '60% 40%'],
+  ['img/ristorante/r-5.jpg',  '50% 50%'],
+  ['img/ristorante/r-6.jpg',  '50% 40%'],
+  ['img/ristorante/r-7.jpg',  '45% 55%'],
+  ['img/ristorante/r-8.jpg',  '55% 45%'],
+  ['img/ristorante/r-9.jpg',  '50% 50%'],
+  ['img/ristorante/r-11.jpg', '50% 40%'],
+  ['img/ristorante/r-12.jpg', '50% 50%'],
+  ['img/ristorante/r-10.jpg', '50% 60%'],
+  ['img/ristorante/r-2.jpg',  '70% 30%'],
+  ['img/ristorante/r-4.jpg',  '30% 65%'],
+  ['img/ristorante/r-1.jpg',  '30% 60%'],
+  ['img/ristorante/r-6.jpg',  '65% 35%'],
+  ['img/ristorante/r-3.jpg',  '60% 30%'],
+  ['img/ristorante/r-5.jpg',  '35% 55%'],
+  ['img/ristorante/r-7.jpg',  '70% 50%'],
+  ['img/ristorante/r-9.jpg',  '30% 45%'],
+  ['img/ristorante/r-8.jpg',  '55% 60%'],
+  ['img/ristorante/r-11.jpg', '40% 40%'],
+  ['img/ristorante/r-12.jpg', '60% 50%'],
+  ['img/ristorante/r-10.jpg', '50% 35%'],
+]
+
+const grid  = document.getElementById('grid')
+const tiles = []
+let busy = false
+
+// build tiles
+for (let r = 0; r < ROWS; r++) {
+  tiles[r] = []
+  for (let c = 0; c < COLS; c++) {
+    const idx = r * COLS + c
+    const [img, pos] = PHOTOS[idx]
+
+    const t = document.createElement('div')
+    t.className = 'tile'
+
+    const front = document.createElement('div')
+    front.className = 'layer-front'
+    front.style.backgroundImage = `url('${img}')`
+    front.style.backgroundPosition = pos
+
+    const back = document.createElement('div')
+    back.className = 'layer-back'
+    // back will be populated on click
+
+    t.appendChild(front)
+    t.appendChild(back)
+    t.addEventListener('click', () => expand(r, c))
+    grid.appendChild(t)
+    tiles[r][c] = t
+  }
+}
+
+const shown = Array.from({length:ROWS}, () => Array(COLS).fill(false))
+const STAGGER = 70
+
+function expand(clickR, clickC) {
+  if (busy) return
+  busy = true
+
+  const [clickImg] = PHOTOS[clickR * COLS + clickC]
+
+  // pre-load all back layers with mosaic of clicked image
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const bx = (c / (COLS-1) * 100).toFixed(1) + '%'
+      const by = (r / (ROWS-1) * 100).toFixed(1) + '%'
+      const back = tiles[r][c].querySelector('.layer-back')
+      back.style.backgroundImage    = `url('${clickImg}')`
+      back.style.backgroundSize     = `${COLS * 100}% ${ROWS * 100}%`
+      back.style.backgroundPosition = `${bx} ${by}`
+    }
+  }
+
+  // BFS wave flip from clicked tile
+  wave(clickR, clickC, true, () => {
+    setTimeout(() => wave(clickR, clickC, false, () => { busy = false }), 2200)
+  })
+}
+
+// BFS wave — flip all tiles to `toBack` starting from (sr,sc)
+function wave(sr, sc, toBack, onComplete) {
+  const dist = Array.from({length:ROWS}, () => Array(COLS).fill(-1))
+  const queue = [[sr, sc, 0]]
+  dist[sr][sc] = 0
+  const order = []
+
+  while (queue.length) {
+    const [r, c, d] = queue.shift()
+    order.push([r, c, d])
+    for (const [dr,dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+      const nr=r+dr, nc=c+dc
+      if (nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&dist[nr][nc]===-1) {
+        dist[nr][nc]=d+1; queue.push([nr,nc,d+1])
+      }
+    }
+  }
+
+  const maxD = order[order.length-1][2]
+  for (const [r, c, d] of order)
+    setTimeout(() => tiles[r][c].classList.toggle('flipped', toBack), d * STAGGER)
+
+  setTimeout(onComplete, maxD * STAGGER + 520)
+}
+</script>
+</body>
+</html>

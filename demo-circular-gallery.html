@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Circular Gallery — DMC Calabria · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --notte:      #0a1929;
+    --notte-deep: #050d18;
+    --marmo:      #f5f1e8;
+    --oro:        #c9a961;
+    --oro-chiaro: #e8d4a0;
+    --ease:       cubic-bezier(0.16, 1, 0.3, 1);
+
+    --ring:   min(88vmin, 720px);
+    --card-w: clamp(54px, 11.5vmin, 88px);
+    --card-h: clamp(72px, 15.3vmin, 117px);   /* 3:4 of card-w */
+    --radius: calc(var(--ring) / 2 - var(--card-h) / 2 - 3px);
+    --med:    calc(var(--ring) * 0.58);         /* big center, halves the gap to ring */
+    --ink:    #122033;
+    --gold-deep: #9c7c33;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 50% 40%, rgba(255,255,255,0.92), rgba(247,241,232,0) 52%),
+      linear-gradient(165deg, #f6f0e6 0%, #ece2d0 55%, #e3d6bd 100%);
+    color: var(--ink);
+    font-family: 'Georgia', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    padding: 1.5rem 1rem;
+  }
+
+  /* ── Title ── */
+  .head {
+    text-align: center;
+    margin-bottom: 0.6rem;
+    opacity: 0;
+    transform: translateY(14px);
+    animation: fade-up 0.9s var(--ease) 0.2s forwards;
+  }
+  .eyebrow {
+    font-family: 'Courier New', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-bottom: 0.5rem;
+  }
+  .title {
+    font-size: clamp(1.7rem, 4.5vw, 3rem);
+    font-weight: 300;
+    line-height: 1;
+  }
+  @keyframes fade-up { to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Ring stage ── */
+  .stage {
+    position: relative;
+    width: var(--ring);
+    height: var(--ring);
+    flex-shrink: 0;
+  }
+  .ring {
+    position: absolute;
+    inset: 0;
+    animation: spin 90s linear infinite;
+  }
+  .stage:hover .ring { animation-play-state: paused; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Cards ── */
+  .card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--card-w);
+    height: var(--card-h);
+    margin: calc(var(--card-h) / -2) 0 0 calc(var(--card-w) / -2);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid rgba(18,32,51,0.14);
+    box-shadow: 0 8px 20px rgba(60,45,15,0.22);
+    transform: rotate(0) translateY(0) scale(0.15);
+    opacity: 0.001;
+    transition: transform 0.85s var(--ease), opacity 0.6s var(--ease),
+                box-shadow 0.4s var(--ease), border-color 0.4s var(--ease);
+    transform-origin: center center;
+  }
+  .card.in { opacity: 1; transform: rotate(var(--a)) translateY(calc(-1 * var(--radius))) scale(1); }
+
+  .card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.95) saturate(1);
+    transition: filter 0.4s var(--ease);
+  }
+  .card:hover {
+    z-index: 30;
+    border-color: var(--oro);
+    box-shadow: 0 18px 46px rgba(60,45,15,0.32), 0 0 0 1px rgba(201,169,97,0.55);
+  }
+  .card.in:hover { transform: rotate(var(--a)) translateY(calc(-1 * var(--radius) - 12px)) scale(1.22); }
+  .card:hover img { filter: brightness(1.06) saturate(1.12); }
+
+  /* readable label chip — counter-rotated to stay horizontal */
+  .card .label {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 9px);
+    transform: translateX(-50%) rotate(calc(-1 * var(--a))) scale(0.8);
+    transform-origin: center bottom;
+    white-space: nowrap;
+    padding: 0.3rem 0.65rem;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+    color: var(--notte-deep);
+    background: var(--oro-chiaro);
+    border-radius: 6px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+  }
+  .card:hover .label {
+    opacity: 1;
+    transform: translateX(-50%) rotate(calc(-1 * var(--a))) scale(1);
+  }
+
+  /* ── Center medallion (big, active photo) ── */
+  .medallion {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: var(--med);
+    height: var(--med);
+    margin: calc(var(--med) / -2) 0 0 calc(var(--med) / -2);
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid rgba(201,169,97,0.7);
+    box-shadow: 0 0 0 10px rgba(255,255,255,0.7), 0 24px 64px rgba(60,45,15,0.3);
+    opacity: 0;
+    transform: scale(0.5);
+    animation: pop 0.9s var(--ease) 0.5s forwards;
+    z-index: 10;
+  }
+  @keyframes pop { to { opacity: 1; transform: scale(1); } }
+  .medallion img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: opacity 0.45s var(--ease), transform 6s var(--ease);
+    transform: scale(1.06);
+  }
+  .medallion.swap img { transform: scale(1); }
+  .medallion .m-cap {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 2.4rem 0.5rem 1.1rem;
+    text-align: center;
+    font-family: 'Georgia', serif;
+    font-size: clamp(1rem, 2.6vw, 1.7rem);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--marmo);
+    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    background: linear-gradient(to top, rgba(5,13,24,0.92), rgba(5,13,24,0.55) 45%, transparent);
+  }
+  .medallion .m-cap::before {
+    content: '◆';
+    display: block;
+    color: var(--oro);
+    font-size: 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .hint {
+    margin-top: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.56rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(18,32,51,0.45);
+    opacity: 0;
+    animation: fade-up 0.9s var(--ease) 1s forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ring { animation: none; }
+    .card { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="eyebrow">DMC Calabria · Le Destinazioni</div>
+    <h1 class="title">Circular Gallery</h1>
+  </div>
+
+  <div class="stage">
+    <div class="ring" id="ring"><!-- cards injected --></div>
+    <div class="medallion" id="medallion">
+      <img id="mImg" src="img/dmc/dmc-1.jpg" alt="" />
+      <div class="m-cap" id="mCap">Tropea</div>
+    </div>
+  </div>
+
+  <p class="hint">Passa sopra per fermare · clicca una destinazione</p>
+
+<script>
+  const PHOTOS = [
+    { src: 'img/dmc/dmc-1.jpg',  cap: 'Tropea' },
+    { src: 'img/dmc/dmc-13.jpg', cap: 'Roghudi' },
+    { src: 'img/dmc/dmc-2.jpg',  cap: 'Scilla' },
+    { src: 'img/dmc/dmc-14.jpg', cap: 'Bova' },
+    { src: 'img/dmc/dmc-3.jpg',  cap: 'Capo Vaticano' },
+    { src: 'img/dmc/dmc-15.jpg', cap: 'Diamante' },
+    { src: 'img/dmc/dmc-4.jpg',  cap: 'Sila' },
+    { src: 'img/dmc/dmc-16.jpg', cap: 'Morano Calabro' },
+    { src: 'img/dmc/dmc-5.jpg',  cap: 'Pentedattilo' },
+    { src: 'img/dmc/dmc-17.jpg', cap: 'Praia a Mare' },
+    { src: 'img/dmc/dmc-6.jpg',  cap: 'Gerace' },
+    { src: 'img/dmc/dmc-18.jpg', cap: 'Cosenza' },
+    { src: 'img/dmc/dmc-7.jpg',  cap: 'Pizzo' },
+    { src: 'img/dmc/dmc-19.jpg', cap: 'Catanzaro' },
+    { src: 'img/dmc/dmc-8.jpg',  cap: 'Stilo' },
+    { src: 'img/dmc/dmc-20.jpg', cap: 'Copanello' },
+    { src: 'img/dmc/dmc-9.jpg',  cap: 'Le Castella' },
+    { src: 'img/dmc/dmc-10.jpg', cap: 'Aspromonte' },
+    { src: 'img/dmc/dmc-11.jpg', cap: 'Civita' },
+    { src: 'img/dmc/dmc-12.jpg', cap: 'Reggio Calabria' },
+  ];
+
+  const ring = document.getElementById('ring');
+  const med  = document.getElementById('medallion');
+  const mImg = document.getElementById('mImg');
+  const mCap = document.getElementById('mCap');
+  const step = 360 / PHOTOS.length;
+
+  PHOTOS.forEach((p, i) => {
+    const card = document.createElement('figure');
+    card.className = 'card';
+    card.style.setProperty('--a', (i * step) + 'deg');
+    card.innerHTML =
+      `<img src="${p.src}" alt="${p.cap}" loading="lazy" />` +
+      `<figcaption class="label">${p.cap}</figcaption>`;
+    card.addEventListener('click', () => {
+      mImg.style.opacity = '0';
+      med.classList.remove('swap');
+      setTimeout(() => {
+        mImg.src = p.src;
+        mImg.style.opacity = '1';
+        mCap.textContent = p.cap;
+        requestAnimationFrame(() => med.classList.add('swap'));
+      }, 230);
+    });
+    ring.appendChild(card);
+  });
+
+  // initial slow zoom on medallion
+  requestAnimationFrame(() => med.classList.add('swap'));
+
+  // fan-out entrance, staggered
+  const cards = ring.querySelectorAll('.card');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    cards.forEach((c, i) => {
+      c.style.transitionDelay = (i * 0.035) + 's';
+      c.classList.add('in');
+    });
+  }));
+</script>
+</body>
+</html>

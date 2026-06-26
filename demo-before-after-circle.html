@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Spotlight Reveal · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:    #050d18;
+    --oro:   #c9a961;
+    --text:  #f5f1e8;
+    --dim:   rgba(245,241,232,0.45);
+    --serif: Georgia, serif;
+    --mono:  'Courier New', monospace;
+    --ease:  cubic-bezier(0.16,1,0.3,1);
+  }
+  html, body { height: 100%; background: var(--bg); overflow: hidden; }
+
+  .stage {
+    position: relative;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  .pair {
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  .pair.is-active { opacity: 1; pointer-events: auto; }
+
+  .img-before, .img-after {
+    position: absolute; inset: 0;
+    background-size: cover;
+    background-position: center;
+  }
+  .img-before { filter: grayscale(0.4) brightness(0.8) sepia(0.15); }
+
+  /* cursor ring */
+  .cursor-ring {
+    position: fixed;
+    pointer-events: none;
+    z-index: 50;
+    transform: translate(-50%, -50%);
+    border: 1.5px solid var(--oro);
+    border-radius: 50%;
+    mix-blend-mode: screen;
+    transition: width 0.3s var(--ease), height 0.3s var(--ease), opacity 0.3s;
+    width: 40px; height: 40px;
+    opacity: 0;
+  }
+  .cursor-ring.visible { opacity: 1; }
+  .cursor-inner {
+    position: fixed;
+    pointer-events: none;
+    z-index: 51;
+    transform: translate(-50%, -50%);
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--oro);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .cursor-inner.visible { opacity: 1; }
+
+  /* label */
+  .lbl {
+    position: absolute;
+    z-index: 20;
+    font-family: var(--mono);
+    font-size: 0.48rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.6rem;
+    border: 1px solid;
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+    top: 5.5rem;
+  }
+  .lbl-b { left: 2rem; color: var(--dim); border-color: rgba(245,241,232,0.12); background: rgba(5,13,24,0.6); }
+  .lbl-a { right: 2rem; color: var(--oro); border-color: rgba(201,169,97,0.28); background: rgba(5,13,24,0.6); }
+
+  /* gradient edges */
+  .edge-l, .edge-r {
+    position: absolute; top: 0; bottom: 0; width: 80px; z-index: 8; pointer-events: none;
+  }
+  .edge-l { left: 0; background: linear-gradient(to right, rgba(5,13,24,0.5), transparent); }
+  .edge-r { right: 0; background: linear-gradient(to left, rgba(5,13,24,0.5), transparent); }
+
+  /* top bar */
+  .top-bar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+    padding: 1.75rem 2.5rem 4rem;
+    background: linear-gradient(to bottom, rgba(5,13,24,0.85), transparent);
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: start;
+    pointer-events: none;
+  }
+  .logo { display: flex; flex-direction: column; line-height: 1.25; }
+  .logo-a { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text); font-family: var(--mono); }
+  .logo-b { font-size: 0.46rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--oro); font-family: var(--mono); }
+  .pair-title { font-family: var(--serif); font-size: clamp(1.4rem,3vw,2rem); font-weight: 300; color: var(--text); text-align: center; transition: opacity 0.3s, transform 0.4s var(--ease); }
+  .pair-title.sw { opacity: 0; transform: translateY(8px); }
+  .pair-result { font-family: var(--mono); font-size: 0.52rem; letter-spacing: 0.1em; color: var(--dim); text-align: center; margin-top: 0.4rem; transition: opacity 0.3s, transform 0.4s var(--ease); white-space: nowrap; }
+  .pair-result .h { color: var(--oro); }
+  .pair-result.sw { opacity: 0; transform: translateY(8px); }
+  .pair-counter { font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.18em; color: var(--dim); text-align: right; }
+
+  /* bottom */
+  .bottom-bar {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+    padding: 4rem 2.5rem 2.25rem;
+    background: linear-gradient(to top, rgba(5,13,24,0.92), rgba(5,13,24,0.5) 50%, transparent);
+    display: flex; align-items: flex-end; justify-content: space-between; pointer-events: none;
+  }
+  .tabs { display: flex; gap: 2px; pointer-events: auto; }
+  .tab {
+    display: flex; align-items: center; gap: 0.45rem;
+    padding: 0.42rem 0.9rem;
+    font-family: var(--mono); font-size: 0.5rem; letter-spacing: 0.14em; text-transform: uppercase;
+    background: rgba(5,13,24,0.7); border: 1px solid rgba(245,241,232,0.1); color: var(--dim);
+    cursor: pointer; transition: all 0.25s; backdrop-filter: blur(8px);
+  }
+  .tab:hover { color: var(--text); border-color: rgba(245,241,232,0.22); }
+  .tab.is-active { color: var(--oro); border-color: rgba(201,169,97,0.4); }
+  .tab-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .hint { font-family: var(--mono); font-size: 0.46rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(245,241,232,0.25); }
+
+  .tag { position: absolute; top: 1.75rem; right: 2.5rem; z-index: 25; font-family: var(--mono); font-size: 0.44rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); border: 1px solid rgba(201,169,97,0.15); padding: 0.28rem 0.55rem; background: rgba(10,25,41,0.7); backdrop-filter: blur(8px); pointer-events: none; }
+  .tag span { color: var(--oro); }
+
+  /* size slider */
+  .size-ctrl {
+    position: absolute; top: 50%; right: 2rem; transform: translateY(-50%);
+    z-index: 25; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    pointer-events: auto;
+  }
+  .size-label { font-family: var(--mono); font-size: 0.44rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dim); writing-mode: vertical-rl; }
+  input[type=range].vslider {
+    -webkit-appearance: slider-vertical;
+    appearance: slider-vertical;
+    width: 4px; height: 100px;
+    accent-color: var(--oro);
+    opacity: 0.6;
+    cursor: pointer;
+  }
+  input[type=range].vslider:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <div class="pair is-active" id="pair-0">
+    <div class="img-before" style="background-image:url(img/ba/ba-lobby-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/ba/ba-lobby-after.jpg)"></div>
+  </div>
+  <div class="pair" id="pair-1">
+    <div class="img-before" style="background-image:url(img/ba/ba-rest-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/ba/ba-rest-after.jpg)"></div>
+  </div>
+  <div class="pair" id="pair-2">
+    <div class="img-before" style="background-image:url(img/ba/ba-room-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/ba/ba-room-after.jpg)"></div>
+  </div>
+
+  <div class="lbl lbl-b">Prima</div>
+  <div class="lbl lbl-a">Dopo</div>
+  <div class="edge-l"></div><div class="edge-r"></div>
+
+  <div class="top-bar">
+    <div class="logo"><span class="logo-a">Digital Evolution</span><span class="logo-b">Italy · Spotlight</span></div>
+    <div>
+      <div class="pair-title"  id="pair-title">Lobby Hotel</div>
+      <div class="pair-result" id="pair-result">Invisibile online → <span class="h">+180% prenotazioni</span></div>
+    </div>
+    <div style="text-align:right"><span class="pair-counter" id="pair-counter">01 / 03</span></div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="tabs" id="tabs">
+      <button class="tab is-active" data-pair="0"><span class="tab-dot"></span>Lobby Hotel</button>
+      <button class="tab" data-pair="1"><span class="tab-dot"></span>Ristorante</button>
+      <button class="tab" data-pair="2"><span class="tab-dot"></span>Camera Luxury</button>
+    </div>
+    <span class="hint">Muovi il cursore per rivelare</span>
+  </div>
+
+  <div class="size-ctrl">
+    <span class="size-label">Zoom</span>
+    <input type="range" class="vslider" id="size-slider" min="80" max="400" value="200" orient="vertical"/>
+  </div>
+
+</div>
+
+<div class="cursor-ring"  id="cursor-ring"></div>
+<div class="cursor-inner" id="cursor-inner"></div>
+<div class="tag">Effetto: <span>Spotlight Reveal</span> · Digital Evolution Italy</div>
+
+<script>
+const PAIRS = [
+  { name: 'Lobby Hotel',   num: '01', result: 'Invisibile online → <span class="h">+180% prenotazioni</span>' },
+  { name: 'Ristorante',    num: '02', result: 'Solo Facebook → <span class="h">+240% coperti online</span>' },
+  { name: 'Camera Luxury', num: '03', result: 'Foto di bassa qualità → <span class="h">RevPAR +65%</span>' },
+]
+
+const stage   = document.getElementById('stage')
+const ring    = document.getElementById('cursor-ring')
+const inner   = document.getElementById('cursor-inner')
+const title   = document.getElementById('pair-title')
+const res     = document.getElementById('pair-result')
+const counter = document.getElementById('pair-counter')
+const tabs    = document.querySelectorAll('.tab')
+const pairs   = document.querySelectorAll('.pair')
+const slider  = document.getElementById('size-slider')
+
+let mx = window.innerWidth/2, my = window.innerHeight/2
+let curX = mx, curY = my
+let targetR = 200, curR = 0
+let activePair = 0
+let idle = 0, idleAngle = 0
+
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; idle = 0 })
+document.addEventListener('touchmove', e => { mx = e.touches[0].clientX; my = e.touches[0].clientY; idle = 0 }, { passive: true })
+
+stage.addEventListener('mouseenter', () => { ring.classList.add('visible'); inner.classList.add('visible') })
+stage.addEventListener('mouseleave', () => { ring.classList.remove('visible'); inner.classList.remove('visible') })
+
+slider.addEventListener('input', () => { targetR = +slider.value })
+
+function setPair(idx) {
+  if (idx === activePair) return
+  activePair = idx
+  title.classList.add('sw'); res.classList.add('sw')
+  setTimeout(() => {
+    title.textContent = PAIRS[idx].name
+    res.innerHTML     = PAIRS[idx].result
+    counter.textContent = `${PAIRS[idx].num} / 0${PAIRS.length}`
+    title.classList.remove('sw'); res.classList.remove('sw')
+  }, 220)
+  pairs.forEach((p,i) => p.classList.toggle('is-active', i===idx))
+  tabs.forEach((t,i)  => t.classList.toggle('is-active', i===idx))
+}
+tabs.forEach(t => t.addEventListener('click', () => setPair(+t.dataset.pair)))
+
+function tick() {
+  idle++
+  // idle drift
+  if (idle > 90) {
+    idleAngle += 0.008
+    const cx = window.innerWidth/2  + Math.cos(idleAngle) * 280
+    const cy = window.innerHeight/2 + Math.sin(idleAngle * 0.7) * 180
+    mx = cx; my = cy
+  }
+
+  curX += (mx - curX) * 0.1
+  curY += (my - curY) * 0.1
+  curR += (targetR - curR) * 0.08
+
+  // update cursor
+  ring.style.left = curX + 'px'
+  ring.style.top  = curY + 'px'
+  ring.style.width  = curR * 2 + 'px'
+  ring.style.height = curR * 2 + 'px'
+  inner.style.left = curX + 'px'
+  inner.style.top  = curY + 'px'
+
+  // clip-path on active after image
+  const after = pairs[activePair].querySelector('.img-after')
+  after.style.clipPath = `circle(${curR}px at ${curX}px ${curY}px)`
+
+  requestAnimationFrame(tick)
+}
+tick()
+</script>
+</body>
+</html>

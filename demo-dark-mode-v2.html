@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Le Camere · Villa Tramonto · Tropea</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --serif:Georgia,'Times New Roman',serif;
+  --mono:'Courier New',monospace;
+  --sans:'Helvetica Neue',Arial,sans-serif;
+  --bg:#faf6f0;--surface:#f3ece1;--card:#ffffff;
+  --border:rgba(0,0,0,0.08);
+  --accent:#9a6f2a;--accent-dim:rgba(154,111,42,0.12);
+  --text:#1a1208;--text2:#5a4a32;--text3:#a08060;
+  --shadow:0 4px 24px rgba(0,0,0,.08),0 16px 56px rgba(0,0,0,.08);
+  --t:.65s;--ease:cubic-bezier(0.4,0,0.2,1);
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;
+  display:flex;flex-direction:column}
+
+/* ── NAV ─────────────────────────────────────────────────── */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(250,246,240,.96);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  padding:0 3rem;height:62px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.nav-logo{display:flex;flex-direction:column;gap:1px}
+.nav-name{font-family:var(--serif);font-size:1rem;letter-spacing:.02em}
+.nav-sub{font-family:var(--mono);font-size:.52rem;letter-spacing:.22em;text-transform:uppercase;color:var(--text3)}
+.nav-links{display:flex;gap:2rem;align-items:center}
+.nav-link{font-size:.68rem;letter-spacing:.06em;color:var(--text2);text-decoration:none;transition:color .2s}
+.nav-link:hover,.nav-link.on{color:var(--accent)}
+.nav-link.on{border-bottom:1px solid var(--accent);padding-bottom:1px}
+
+/* toggle — removed from nav, now on photo card */
+.toggle-group{display:none}
+
+/* ── MAIN ────────────────────────────────────────────────── */
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:2.5rem 3rem}
+
+/* ── BIG CARD ────────────────────────────────────────────── */
+.card{
+  width:100%;max-width:1100px;
+  display:grid;grid-template-columns:1fr 420px;
+  background:var(--card);border-radius:20px;
+  border:1px solid var(--border);box-shadow:var(--shadow);
+  overflow:hidden;min-height:520px;
+}
+
+/* ── PHOTO SIDE ──────────────────────────────────────────── */
+.photo-side{position:relative;overflow:hidden;background:#e8ddd0}
+.room-img{
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  opacity:0;transition:opacity var(--t) var(--ease);
+  z-index:1;
+}
+.room-img.visible{opacity:1;z-index:2}
+
+/* day/night inside each room set */
+.img-day.visible  { opacity:1 }
+.img-night.visible{ opacity:0 }   /* overridden when night=true */
+.night .img-day.visible  { opacity:0;z-index:1 }
+.night .img-night.visible{ opacity:1;z-index:2 }
+
+/* ── CARD TOGGLE (top-right of photo) ───────────────────── */
+.card-toggle{
+  position:absolute;top:1.1rem;right:1.1rem;z-index:10;
+  display:flex;align-items:center;gap:.55rem;
+  background:rgba(250,246,240,.88);backdrop-filter:blur(12px);
+  border:1px solid rgba(154,111,42,.2);border-radius:40px;
+  padding:.45rem .85rem;cursor:pointer;
+}
+.ct-lbl{
+  font-family:var(--mono);font-size:.52rem;letter-spacing:.12em;
+  color:var(--text3);transition:color .3s;user-select:none;
+}
+.ct-lbl.on{color:var(--text);font-weight:700}
+
+.ct-pill{position:relative;width:58px;height:30px;flex-shrink:0}
+.ct-pill input{opacity:0;width:0;height:0;position:absolute}
+.ct-track{
+  position:absolute;inset:0;border-radius:15px;
+  background:#ddd0bc;border:1px solid rgba(0,0,0,.1);
+  transition:background var(--t) var(--ease);
+}
+.night .ct-track{background:#1a2d48}
+.ct-thumb{
+  position:absolute;top:3px;left:3px;
+  width:24px;height:24px;border-radius:50%;
+  background:var(--accent);font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.28);
+  transition:transform var(--t) var(--ease);
+}
+.night .ct-thumb{transform:translateX(28px)}
+
+/* room badge */
+.photo-badge{
+  position:absolute;top:1.2rem;left:1.2rem;z-index:10;
+  font-family:var(--mono);font-size:.42rem;letter-spacing:.18em;text-transform:uppercase;
+  background:rgba(250,246,240,.92);backdrop-filter:blur(8px);
+  color:var(--accent);padding:.24rem .6rem;border-radius:3px;
+  border:1px solid rgba(154,111,42,.22);
+  transition:opacity .4s;
+}
+
+/* ── INFO SIDE ───────────────────────────────────────────── */
+.info-side{
+  padding:2.4rem 2.6rem 2rem;
+  display:flex;flex-direction:column;
+  border-left:1px solid var(--border);
+}
+.info-tag{font-family:var(--mono);font-size:.44rem;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+.info-name{
+  font-family:var(--serif);font-weight:400;
+  font-size:1.75rem;line-height:1.15;color:var(--text);
+  margin-bottom:.5rem;
+  min-height:4rem; /* stable layout during transition */
+  transition:opacity .3s;
+}
+.info-meta{
+  display:flex;gap:.8rem;font-family:var(--mono);font-size:.5rem;
+  letter-spacing:.08em;color:var(--text3);
+  margin-bottom:.9rem;padding-bottom:.9rem;border-bottom:1px solid var(--border);
+}
+.info-desc{
+  font-size:.68rem;color:var(--text2);line-height:1.78;flex:1;
+  min-height:5rem;
+  transition:opacity .3s;
+}
+.amenities{display:flex;gap:.4rem;flex-wrap:wrap;margin:.9rem 0}
+.amenity{
+  font-family:var(--mono);font-size:.4rem;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--accent-dim);color:var(--accent);
+  padding:.2rem .52rem;border-radius:3px;
+}
+.price-row{display:flex;align-items:baseline;gap:.5rem;margin-bottom:1.2rem}
+.price-from{font-family:var(--mono);font-size:.48rem;letter-spacing:.1em;color:var(--text3)}
+.price-val{font-family:var(--serif);font-size:1.5rem}
+.price-per{font-family:var(--mono);font-size:.48rem;color:var(--text3)}
+
+.book-btn{
+  width:100%;padding:.72rem;background:var(--accent);color:#fff;border:none;
+  border-radius:9px;cursor:pointer;font-family:var(--mono);
+  font-size:.48rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;
+  transition:opacity .2s;margin-bottom:1.6rem;
+}
+.book-btn:hover{opacity:.82}
+
+/* ── ROOM SWITCHERS ──────────────────────────────────────── */
+.switchers{display:flex;gap:.5rem;border-top:1px solid var(--border);padding-top:1.3rem}
+.sw-btn{
+  flex:1;padding:.5rem .4rem;
+  background:none;border:1px solid var(--border);border-radius:8px;
+  cursor:pointer;transition:background .2s,border-color .2s;
+  display:flex;flex-direction:column;align-items:center;gap:.25rem;
+}
+.sw-btn:hover{background:var(--accent-dim)}
+.sw-btn.active{background:var(--accent-dim);border-color:rgba(154,111,42,.45)}
+.sw-thumb{
+  width:52px;height:36px;border-radius:4px;overflow:hidden;
+  position:relative;background:#e0d4c0;flex-shrink:0;
+}
+.sw-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity var(--t) var(--ease)}
+.sw-thumb .sd{opacity:1}
+.night .sw-thumb .sd{opacity:0}
+.night .sw-thumb .sn{opacity:1}
+.sw-label{font-family:var(--mono);font-size:.38rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+.sw-btn.active .sw-label{color:var(--accent)}
+
+/* ── BOTTOM ──────────────────────────────────────────────── */
+footer{
+  border-top:1px solid var(--border);padding:1rem 3rem;
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--mono);font-size:.5rem;letter-spacing:.08em;color:var(--text3);
+}
+footer a{color:var(--accent);text-decoration:none}
+
+.tag{position:fixed;bottom:1.5rem;right:1.5rem;z-index:200;
+  font-family:var(--mono);font-size:.42rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--text2);border:1px solid var(--border);padding:.26rem .52rem;
+  background:rgba(250,246,240,.92);backdrop-filter:blur(8px);border-radius:4px}
+.tag span{color:var(--accent)}
+
+/* fading text during room switch */
+.fading{opacity:0!important}
+</style>
+</head>
+<body id="body">
+
+<nav class="nav">
+  <div class="nav-logo">
+    <span class="nav-name">Villa Tramonto</span>
+    <span class="nav-sub">Tropea · Calabria</span>
+  </div>
+  <div class="nav-links">
+    <a href="#" class="nav-link">Hotel</a>
+    <a href="#" class="nav-link on">Camere</a>
+    <a href="#" class="nav-link">Ristorante</a>
+    <a href="#" class="nav-link">Spa</a>
+    <a href="#" class="nav-link">Contatti</a>
+  </div>
+</nav>
+
+<main>
+  <div class="card" id="card">
+
+    <!-- PHOTO -->
+    <div class="photo-side" id="photoSide">
+      <!-- Room 1 -->
+      <img class="room-img img-day  visible" data-room="0" src="img/room/room-day.jpg"   alt=""/>
+      <img class="room-img img-night visible" data-room="0" src="img/room/room-night.jpg" alt=""/>
+      <!-- Room 2 -->
+      <img class="room-img img-day"   data-room="1" src="img/room/room2-day.jpg"   alt=""/>
+      <img class="room-img img-night" data-room="1" src="img/room/room2-night.jpg" alt=""/>
+      <!-- Room 3 -->
+      <img class="room-img img-day"   data-room="2" src="img/room/room3-day.jpg"   alt=""/>
+      <img class="room-img img-night" data-room="2" src="img/room/room3-night.jpg" alt=""/>
+
+      <div class="photo-badge" id="badge">Suite</div>
+
+      <!-- toggle top-right on card -->
+      <label class="card-toggle">
+        <span class="ct-lbl on" id="lbl-day">☀️ Giorno</span>
+        <div class="ct-pill">
+          <input type="checkbox" id="toggle"/>
+          <div class="ct-track"></div>
+          <div class="ct-thumb" id="thumb">☀️</div>
+        </div>
+        <span class="ct-lbl" id="lbl-night">Sera 🌙</span>
+      </label>
+    </div>
+
+    <!-- INFO -->
+    <div class="info-side">
+      <p class="info-tag">Le Nostre Camere</p>
+      <h2 class="info-name" id="infoName">Suite Vista Mare</h2>
+      <div class="info-meta" id="infoMeta">
+        <span>45 m²</span><span>·</span><span>2 ospiti</span><span>·</span><span>Piano 3</span>
+      </div>
+      <p class="info-desc" id="infoDesc">Terrazza privata con vista panoramica sul borgo di Tropea e sul Tirreno. Interni in rattan e legno naturale, pavimento in cotto, biancheria di lino.</p>
+      <div class="amenities" id="infoAmenities">
+        <span class="amenity">Vista Mare</span>
+        <span class="amenity">Terrazza</span>
+        <span class="amenity">King Bed</span>
+        <span class="amenity">Minibar</span>
+      </div>
+      <div class="price-row">
+        <span class="price-from">da</span>
+        <span class="price-val" id="infoPrice">€ 280</span>
+        <span class="price-per">/ notte · colazione inclusa</span>
+      </div>
+      <button class="book-btn">Prenota Ora</button>
+
+      <!-- SWITCHERS -->
+      <div class="switchers">
+        <button class="sw-btn active" data-room="0" onclick="switchRoom(0)">
+          <div class="sw-thumb">
+            <img class="sd" src="img/room/room-day.jpg"   alt=""/>
+            <img class="sn" src="img/room/room-night.jpg" alt=""/>
+          </div>
+          <span class="sw-label">Suite</span>
+        </button>
+        <button class="sw-btn" data-room="1" onclick="switchRoom(1)">
+          <div class="sw-thumb">
+            <img class="sd" src="img/room/room2-day.jpg"  alt=""/>
+            <img class="sn" src="img/room/room2-night.jpg" alt=""/>
+          </div>
+          <span class="sw-label">Romantica</span>
+        </button>
+        <button class="sw-btn" data-room="2" onclick="switchRoom(2)">
+          <div class="sw-thumb">
+            <img class="sd" src="img/room/room3-day.jpg"   alt=""/>
+            <img class="sn" src="img/room/room3-night.jpg" alt=""/>
+          </div>
+          <span class="sw-label">Mediterranea</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>© 2025 Villa Tramonto · Tropea, Calabria</span>
+  <span>Sito realizzato da <a href="#">Digital Evolution Italy</a></span>
+</footer>
+
+<div class="tag">Effetto: <span>Day / Night</span> · Digital Evolution Italy</div>
+
+<script>
+const ROOMS = [
+  {
+    badge:'Suite',
+    name:'Suite Vista Mare',
+    meta:'45 m² · 2 ospiti · Piano 3',
+    desc:'Terrazza privata con vista panoramica sul borgo di Tropea e sul Tirreno. Interni in rattan e legno naturale, pavimento in cotto, biancheria di lino di alta qualità.',
+    amenities:['Vista Mare','Terrazza','King Bed','Minibar'],
+    price:'€ 280',
+  },
+  {
+    badge:'Romantica',
+    name:'Camera della Bougainvillea',
+    meta:'30 m² · 2 ospiti · Piano 2',
+    desc:'Affacciata sulla baia con balcone fiorito di bouganville rosa. Letto in ferro battuto, pareti celesti, colazione servita sul terrazzo con vista sulla scogliera.',
+    amenities:['Balcone Fiorito','Vista Scogliera','Ferro Battuto','Colazione Inclusa'],
+    price:'€ 195',
+  },
+  {
+    badge:'Mediterranea',
+    name:'Camera Mediterranea',
+    meta:'28 m² · 2–3 ospiti · Piano 1',
+    desc:'Due letti in ferro con cuscini in maiolica blu, finestre ad arco e travi in legno antico. Pavimento in cementine tradizionali, vista sul borgo e sulla baia cristallina.',
+    amenities:['Vista Borgo','Twin Beds','Archi Storici','Maiolica'],
+    price:'€ 160',
+  },
+]
+
+let current = 0
+const body    = document.getElementById('body')
+const toggle  = document.getElementById('toggle')
+const thumb   = document.getElementById('thumb')
+const lblDay  = document.getElementById('lbl-day')
+const lblNight= document.getElementById('lbl-night')
+const badge   = document.getElementById('badge')
+const infoName= document.getElementById('infoName')
+const infoMeta= document.getElementById('infoMeta')
+const infoDesc= document.getElementById('infoDesc')
+const infoAm  = document.getElementById('infoAmenities')
+const infoPrice=document.getElementById('infoPrice')
+
+function isNight(){ return body.classList.contains('night') }
+
+// toggle day/night
+toggle.addEventListener('change', () => {
+  const night = toggle.checked
+  body.classList.toggle('night', night)
+  thumb.textContent = night ? '🌙' : '☀️'
+  lblDay.classList.toggle('on', !night)
+  lblNight.classList.toggle('on', night)
+  localStorage.setItem('vt-theme', night ? 'night' : 'day')
+})
+
+// switch room
+function switchRoom(idx) {
+  if (idx === current) return
+  const r = ROOMS[idx]
+
+  // fade text
+  infoName.classList.add('fading')
+  infoDesc.classList.add('fading')
+  infoAm.classList.add('fading')
+
+  // crossfade photos
+  document.querySelectorAll('.room-img').forEach(img => img.classList.remove('visible'))
+  document.querySelectorAll(`.room-img[data-room="${idx}"]`).forEach(img => img.classList.add('visible'))
+
+  // update switcher buttons
+  document.querySelectorAll('.sw-btn').forEach(b => b.classList.toggle('active', +b.dataset.room === idx))
+
+  // update text after short delay
+  setTimeout(() => {
+    badge.textContent       = r.badge
+    infoName.textContent    = r.name
+    infoMeta.textContent    = r.meta
+    infoDesc.textContent    = r.desc
+    infoPrice.textContent   = r.price
+    infoAm.innerHTML        = r.amenities.map(a=>`<span class="amenity">${a}</span>`).join('')
+    infoName.classList.remove('fading')
+    infoDesc.classList.remove('fading')
+    infoAm.classList.remove('fading')
+    current = idx
+  }, 280)
+}
+
+// restore theme
+if (localStorage.getItem('vt-theme') === 'night') {
+  toggle.checked = true
+  body.classList.add('night')
+  thumb.textContent = '🌙'
+  lblDay.classList.remove('on')
+  lblNight.classList.add('on')
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Statistiche · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --bg:#050d18; --surface:#0a1929;
+    --border:rgba(201,169,97,0.13);
+    --oro:#c9a961; --oro-dim:rgba(201,169,97,0.3);
+    --text:#f5f1e8; --dim:rgba(245,241,232,0.45); --muted:rgba(245,241,232,0.16);
+    --serif:Georgia,'Times New Roman',serif; --mono:'Courier New',monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--mono); overflow:hidden; }
+
+  /* Aurora */
+  .aurora { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .ab { position:absolute; border-radius:50%; }
+  .ab-1 { width:900px; height:550px; top:-120px; left:-280px;
+    background:radial-gradient(ellipse,rgba(26,80,200,1) 0%,transparent 65%);
+    filter:blur(100px); opacity:0.055;
+    animation:ab1 52s ease-in-out infinite alternate; }
+  .ab-2 { width:700px; height:700px; bottom:-200px; right:-200px;
+    background:radial-gradient(ellipse,rgba(160,100,10,1) 0%,transparent 65%);
+    filter:blur(110px); opacity:0.06;
+    animation:ab2 65s ease-in-out infinite alternate; animation-delay:-25s; }
+  .ab-3 { width:600px; height:400px; top:30%; left:30%;
+    background:radial-gradient(ellipse,rgba(60,20,120,1) 0%,transparent 65%);
+    filter:blur(90px); opacity:0.04;
+    animation:ab3 44s ease-in-out infinite alternate; animation-delay:-12s; }
+  @keyframes ab1 { from{transform:translate(0,0)} to{transform:translate(120px,80px)} }
+  @keyframes ab2 { from{transform:translate(0,0)} to{transform:translate(-90px,-60px)} }
+  @keyframes ab3 { from{transform:translate(0,0)} to{transform:translate(50px,-80px)} }
+
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:radial-gradient(circle,rgba(201,169,97,0.04) 1px,transparent 1px);
+    background-size:44px 44px; pointer-events:none; z-index:0;
+  }
+
+  /* Layout */
+  .page {
+    position:relative; z-index:1; height:100vh;
+    display:flex; flex-direction:column;
+    padding:0 clamp(2rem,6vw,6rem);
+  }
+
+  /* Header */
+  .header {
+    padding-top:2.5rem; padding-bottom:1.5rem;
+    border-bottom:1px solid rgba(245,241,232,0.07);
+    display:flex; justify-content:space-between; align-items:flex-end;
+  }
+  .h-left { display:flex; flex-direction:column; gap:0.35rem; }
+  .h-pre  { font-size:0.48rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--oro); }
+  .h-title { font-family:var(--serif); font-size:clamp(1.5rem,2.8vw,2.2rem); font-weight:300; }
+  .h-right { font-size:0.48rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--dim); text-align:right; }
+
+  /* Stats grid */
+  .grid {
+    flex:1; display:grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap:0;
+  }
+
+  /* Stat cell */
+  .stat {
+    position:relative; overflow:hidden;
+    border-right:1px solid rgba(245,241,232,0.06);
+    border-bottom:1px solid rgba(245,241,232,0.06);
+    padding:clamp(1.5rem,3vw,3rem);
+    display:flex; flex-direction:column; justify-content:flex-end; gap:0.6rem;
+    cursor:default;
+    transition:background 0.4s;
+  }
+  .stat:hover { background:rgba(201,169,97,0.025); }
+  .stat:nth-child(3n) { border-right:none; }
+  .stat:nth-child(4), .stat:nth-child(5), .stat:nth-child(6) { border-bottom:none; }
+
+  /* Big ghost number */
+  .stat-ghost {
+    position:absolute; right:-0.05em; top:50%; transform:translateY(-45%);
+    font-family:var(--serif); font-weight:300; font-size:clamp(7rem,12vw,13rem);
+    line-height:1; color:rgba(201,169,97,0.035); user-select:none; pointer-events:none;
+    white-space:nowrap;
+  }
+
+  /* Number */
+  .stat-num {
+    position:relative; z-index:1;
+    font-family:var(--serif); font-size:clamp(3rem,5.5vw,5.5rem);
+    font-weight:300; line-height:0.9; color:var(--text);
+    opacity:0; transform:translateY(24px);
+    transition:opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  }
+  .stat-num .prefix { font-size:0.55em; color:var(--dim); font-family:var(--mono); vertical-align:0.06em; }
+  .stat-num .suffix { font-size:0.45em; color:var(--oro); font-family:var(--mono); vertical-align:0.1em; margin-left:0.05em; }
+  .stat-num .decimal { font-size:0.55em; }
+
+  /* Label */
+  .stat-label {
+    position:relative; z-index:1;
+    font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim);
+    opacity:0; transform:translateY(12px);
+    transition:opacity 0.6s 0.12s var(--ease), transform 0.6s 0.12s var(--ease);
+  }
+
+  /* Desc */
+  .stat-desc {
+    position:relative; z-index:1;
+    font-size:0.5rem; letter-spacing:0.06em; color:var(--muted); line-height:1.7; max-width:26ch;
+    opacity:0; transform:translateY(8px);
+    transition:opacity 0.6s 0.2s var(--ease), transform 0.6s 0.2s var(--ease);
+  }
+
+  /* Gold bar accent */
+  .stat::after {
+    content:''; position:absolute; left:clamp(1.5rem,3vw,3rem); bottom:0; width:24px; height:1px;
+    background:var(--oro-dim); opacity:0;
+    transition:opacity 0.5s 0.35s;
+  }
+
+  /* Revealed */
+  .revealed .stat-num   { opacity:1; transform:none; }
+  .revealed .stat-label { opacity:1; transform:none; }
+  .revealed .stat-desc  { opacity:1; transform:none; }
+  .revealed::after      { opacity:1; }
+
+  /* Stagger per cell */
+  .stat:nth-child(1) .stat-num   { transition-delay:0s; }
+  .stat:nth-child(2) .stat-num   { transition-delay:0.09s; }
+  .stat:nth-child(3) .stat-num   { transition-delay:0.18s; }
+  .stat:nth-child(4) .stat-num   { transition-delay:0.27s; }
+  .stat:nth-child(5) .stat-num   { transition-delay:0.36s; }
+  .stat:nth-child(6) .stat-num   { transition-delay:0.45s; }
+  .stat:nth-child(1) .stat-label { transition-delay:0.12s; }
+  .stat:nth-child(2) .stat-label { transition-delay:0.21s; }
+  .stat:nth-child(3) .stat-label { transition-delay:0.3s; }
+  .stat:nth-child(4) .stat-label { transition-delay:0.39s; }
+  .stat:nth-child(5) .stat-label { transition-delay:0.48s; }
+  .stat:nth-child(6) .stat-label { transition-delay:0.57s; }
+  .stat:nth-child(1) .stat-desc  { transition-delay:0.2s; }
+  .stat:nth-child(2) .stat-desc  { transition-delay:0.29s; }
+  .stat:nth-child(3) .stat-desc  { transition-delay:0.38s; }
+  .stat:nth-child(4) .stat-desc  { transition-delay:0.47s; }
+  .stat:nth-child(5) .stat-desc  { transition-delay:0.56s; }
+  .stat:nth-child(6) .stat-desc  { transition-delay:0.65s; }
+
+  /* Footer */
+  .footer {
+    padding:1rem 0 1.5rem;
+    border-top:1px solid rgba(245,241,232,0.07);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .f-note { font-size:0.44rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); }
+  .f-cta {
+    font-size:0.52rem; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--oro); border:1px solid var(--border); padding:0.55rem 1.2rem;
+    background:none; cursor:pointer; font-family:var(--mono);
+    transition:all 0.22s;
+  }
+  .f-cta:hover { background:rgba(201,169,97,0.07); border-color:var(--oro-dim); }
+
+  .tag { position:fixed; bottom:1.5rem; right:1.5rem; z-index:50; font-size:0.44rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--dim); border:1px solid var(--border); padding:0.28rem 0.55rem; background:rgba(10,25,41,0.8); backdrop-filter:blur(8px); }
+  .tag span { color:var(--oro); }
+</style>
+</head>
+<body>
+
+<div class="aurora">
+  <div class="ab ab-1"></div>
+  <div class="ab ab-2"></div>
+  <div class="ab ab-3"></div>
+</div>
+
+<div class="page">
+
+  <div class="header">
+    <div class="h-left">
+      <p class="h-pre">I numeri parlano</p>
+      <h1 class="h-title">Risultati misurabili.<br>Ogni volta.</h1>
+    </div>
+    <div class="h-right">
+      Digital Evolution Italy<br>
+      <span style="color:var(--oro)">Dati medi · Portfolio clienti</span>
+    </div>
+  </div>
+
+  <div class="grid" id="grid">
+
+    <!-- 1 -->
+    <div class="stat">
+      <div class="stat-ghost">850</div>
+      <div class="stat-num" id="n0"><span class="prefix">+</span><span class="val">0</span><span class="suffix">%</span></div>
+      <div class="stat-label">Traffico organico</div>
+      <div class="stat-desc">Crescita media del traffico da ricerca Google nei primi 12 mesi di collaborazione.</div>
+    </div>
+
+    <!-- 2 -->
+    <div class="stat">
+      <div class="stat-ghost">×3</div>
+      <div class="stat-num" id="n1"><span class="prefix">×</span><span class="val">0</span><span class="decimal">.0</span></div>
+      <div class="stat-label">Prenotazioni dirette</div>
+      <div class="stat-desc">Moltiplicatore medio sulle prenotazioni o richieste senza intermediari, dopo 6 mesi.</div>
+    </div>
+
+    <!-- 3 -->
+    <div class="stat">
+      <div class="stat-ghost">97</div>
+      <div class="stat-num" id="n2"><span class="val">0</span><span class="suffix">%</span></div>
+      <div class="stat-label">Clienti soddisfatti</div>
+      <div class="stat-desc">Tasso di soddisfazione misurato con survey post-lancio su tutti i progetti completati.</div>
+    </div>
+
+    <!-- 4 -->
+    <div class="stat">
+      <div class="stat-ghost">47</div>
+      <div class="stat-num" id="n3"><span class="val">0</span></div>
+      <div class="stat-label">Progetti completati</div>
+      <div class="stat-desc">Siti, campagne e strategie digitali consegnati in Italia e mercati esteri dal 2020.</div>
+    </div>
+
+    <!-- 5 -->
+    <div class="stat">
+      <div class="stat-ghost">240</div>
+      <div class="stat-num" id="n4"><span class="prefix">+</span><span class="val">0</span><span class="suffix">%</span></div>
+      <div class="stat-label">Engagement social</div>
+      <div class="stat-desc">Crescita media di interazioni su Instagram e Facebook nei primi 90 giorni attivi.</div>
+    </div>
+
+    <!-- 6 -->
+    <div class="stat">
+      <div class="stat-ghost">6</div>
+      <div class="stat-num" id="n5"><span class="val">0</span><span class="suffix"> mesi</span></div>
+      <div class="stat-label">Tempo medio al ROI</div>
+      <div class="stat-desc">Dalla firma al primo ritorno misurabile sull'investimento digitale. Media su tutti i clienti.</div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="f-note">* Medie calcolate su tutti i clienti attivi 2022–2025</span>
+    <button class="f-cta">Richiedi una consulenza →</button>
+  </div>
+
+</div>
+
+<div class="tag">Effetto: <span>Statistiche Animate</span> · Digital Evolution Italy</div>
+
+<script>
+// Count-up engine
+// target values, durations, decimal digits
+const STATS = [
+  { target:850, duration:1800, decimals:0 },  // 850%
+  { target:3.2, duration:1600, decimals:1 },  // ×3.2
+  { target:97,  duration:1400, decimals:0 },  // 97%
+  { target:47,  duration:1200, decimals:0 },  // 47
+  { target:240, duration:1700, decimals:0 },  // 240%
+  { target:6,   duration:1000, decimals:0 },  // 6
+]
+
+function easeOut(t) { return 1 - Math.pow(1-t, 3) }
+
+function fmt(n, decimals) {
+  if (decimals > 0) return n.toFixed(decimals)
+  const v = Math.floor(n)
+  return v >= 1000 ? Math.floor(v/1000) + '.' + String(v%1000).padStart(3,'0') : String(v)
+}
+
+let started = false
+
+function startCountUp() {
+  if (started) return
+  started = true
+
+  const grid = document.getElementById('grid')
+  grid.classList.add('revealed')
+
+  STATS.forEach((s, i) => {
+    const el = document.getElementById(`n${i}`)
+    const valEl = el.querySelector('.val')
+    const decEl = el.querySelector('.decimal')
+    const delay = i * 90
+
+    setTimeout(() => {
+      const start = performance.now()
+      function tick(now) {
+        const elapsed = now - start
+        const progress = Math.min(elapsed / s.duration, 1)
+        const current = easeOut(progress) * s.target
+
+        if (s.decimals > 0) {
+          valEl.textContent = Math.floor(current)
+          if (decEl) decEl.textContent = '.' + String(current.toFixed(1)).split('.')[1]
+        } else {
+          valEl.textContent = fmt(current, 0)
+        }
+
+        if (progress < 1) requestAnimationFrame(tick)
+        else {
+          if (s.decimals > 0) {
+            valEl.textContent = Math.floor(s.target)
+            if (decEl) decEl.textContent = '.' + s.target.toFixed(1).split('.')[1]
+          } else {
+            valEl.textContent = fmt(s.target, 0)
+          }
+        }
+      }
+      requestAnimationFrame(tick)
+    }, delay)
+  })
+}
+
+// Trigger on load (single screen, no scroll needed)
+setTimeout(startCountUp, 300)
+
+// Also support scroll-in if embedded
+const io = new IntersectionObserver(e => { if(e[0].isIntersecting) startCountUp() }, { threshold:0.3 })
+io.observe(document.getElementById('grid'))
+</script>
+</body>
+</html>

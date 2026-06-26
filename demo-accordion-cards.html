@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Accordion Cards · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --bg:#050d18;
+    --oro:#c9a961; --oro-dim:rgba(201,169,97,0.35);
+    --text:#f5f1e8; --dim:rgba(245,241,232,0.45); --muted:rgba(245,241,232,0.18);
+    --serif:Georgia,'Times New Roman',serif; --mono:'Courier New',monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--mono); overflow:hidden; }
+
+  /* Aurora */
+  .aurora { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .ab { position:absolute; border-radius:50%; }
+  .ab-1 { width:900px; height:500px; top:-150px; left:-200px;
+    background:radial-gradient(ellipse,rgba(26,80,200,1) 0%,transparent 65%);
+    filter:blur(120px); opacity:0.05; animation:ab1 55s ease-in-out infinite alternate; }
+  .ab-2 { width:700px; height:700px; bottom:-200px; right:-200px;
+    background:radial-gradient(ellipse,rgba(140,80,5,1) 0%,transparent 65%);
+    filter:blur(110px); opacity:0.055; animation:ab2 65s ease-in-out infinite alternate; animation-delay:-22s; }
+  @keyframes ab1 { from{transform:translate(0,0)} to{transform:translate(100px,70px)} }
+  @keyframes ab2 { from{transform:translate(0,0)} to{transform:translate(-80px,-60px)} }
+
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image:radial-gradient(circle,rgba(201,169,97,0.03) 1px,transparent 1px);
+    background-size:44px 44px; pointer-events:none; z-index:0;
+  }
+
+  /* Layout */
+  .page {
+    position:relative; z-index:1; height:100vh;
+    display:flex; flex-direction:column; justify-content:center;
+    padding:0 clamp(1.5rem,4vw,4rem);
+    gap:1.2rem;
+  }
+
+  /* Nav */
+  .nav {
+    padding:1.2rem 0 0.8rem;
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid rgba(245,241,232,0.06);
+    flex-shrink:0;
+  }
+  .logo { display:flex; flex-direction:column; }
+  .logo-a { font-size:0.58rem; letter-spacing:0.22em; text-transform:uppercase; }
+  .logo-b { font-size:0.44rem; letter-spacing:0.28em; text-transform:uppercase; color:var(--oro); }
+  .nav-right { font-size:0.46rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--dim); }
+
+  /* Header */
+  .header { padding:0.6rem 0 0; flex-shrink:0; display:flex; justify-content:space-between; align-items:flex-end; }
+  .h-left { display:flex; flex-direction:column; gap:0.3rem; }
+  .h-pre  { font-size:0.46rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--oro); }
+  .h-title { font-family:var(--serif); font-size:clamp(1.4rem,2.5vw,2rem); font-weight:300; }
+  .h-hint { font-size:0.44rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); }
+
+  /* Cards container */
+  .cards {
+    display:flex; gap:5px;
+    height:clamp(300px,44vh,480px);
+    flex-shrink:0;
+  }
+
+  /* Individual card */
+  .card {
+    position:relative; overflow:hidden;
+    flex:1;
+    cursor:pointer;
+    border-radius:10px;
+    transition:flex 0.65s var(--ease), border-color 0.4s, box-shadow 0.5s var(--ease), transform 0.5s var(--ease);
+    border:1px solid rgba(245,241,232,0.06);
+    will-change:flex, transform;
+  }
+  .card.active {
+    flex:5.5;
+    border-color:rgba(201,169,97,0.28);
+    box-shadow:0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(201,169,97,0.15);
+    transform:translateY(-3px);
+  }
+
+  /* Card backgrounds — real photos */
+  .card-0 { background:#050d18; }
+  .card-1 { background:#050d18; }
+  .card-2 { background:#050d18; }
+  .card-3 { background:#050d18; }
+  .card-4 { background:#050d18; }
+
+  .card-img {
+    position:absolute; inset:0; z-index:0;
+    width:100%; height:100%; object-fit:cover;
+    transition:transform 0.8s var(--ease), filter 0.55s ease;
+    filter:grayscale(1) brightness(0.45);
+  }
+  .card.active .card-img {
+    filter:grayscale(0) brightness(0.85);
+    transform:scale(1.04);
+  }
+
+  /* Texture overlay */
+  .card::before {
+    content:''; position:absolute; inset:0; z-index:1;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events:none;
+  }
+
+  /* Shimmer sweep on active */
+  .card::after {
+    content:''; position:absolute; inset:0; z-index:2;
+    background:linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%);
+    background-size:200% 100%; opacity:0;
+    transition:opacity 0.4s;
+    animation:shimmer 3s ease-in-out infinite;
+    animation-play-state:paused;
+    pointer-events:none;
+  }
+  .card.active::after { opacity:1; animation-play-state:running; }
+  @keyframes shimmer {
+    0%   { background-position:200% 0 }
+    100% { background-position:-200% 0 }
+  }
+
+  /* Gradient overlay on top of photo */
+  .card-overlay {
+    position:absolute; inset:0; z-index:2;
+    background:linear-gradient(to top, rgba(5,13,24,0.85) 0%, rgba(5,13,24,0.1) 55%, transparent 100%);
+  }
+
+  /* Per-card accent line top */
+  .card-active-line {
+    position:absolute; top:0; left:0; right:0; height:2px; z-index:10;
+    opacity:0; transition:opacity 0.4s 0.2s;
+  }
+  .card.active .card-active-line { opacity:1; }
+  .card-0 .card-active-line { background:linear-gradient(to right, transparent, #4a90d9, transparent); }
+  .card-1 .card-active-line { background:linear-gradient(to right, transparent, #d97c3a, transparent); }
+  .card-2 .card-active-line { background:linear-gradient(to right, transparent, #4aaa6a, transparent); }
+  .card-3 .card-active-line { background:linear-gradient(to right, transparent, #9a5ac9, transparent); }
+  .card-4 .card-active-line { background:linear-gradient(to right, transparent, var(--oro), transparent); }
+
+  /* Bottom content */
+  .card-bottom {
+    position:absolute; bottom:0; left:0; right:0; z-index:10;
+    padding:1.2rem 1rem 1rem;
+  }
+
+  /* Compressed label — rotated, always visible */
+  .card-label-compressed {
+    position:absolute; bottom:1.2rem; left:50%; transform-origin:center bottom;
+    transform:translateX(-50%) rotate(-90deg) translateY(0);
+    white-space:nowrap;
+    font-size:0.5rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--dim);
+    transition:opacity 0.3s;
+  }
+  .card.active .card-label-compressed { opacity:0; pointer-events:none; }
+
+  /* Expanded content — visible only when active */
+  .card-content {
+    opacity:0; transform:translateY(10px);
+    transition:opacity 0.4s 0.2s var(--ease), transform 0.4s 0.2s var(--ease);
+    pointer-events:none;
+  }
+  .card.active .card-content { opacity:1; transform:none; pointer-events:auto; }
+
+  .card-num   { font-size:0.44rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--oro); margin-bottom:0.5rem; }
+  .card-name  { font-family:var(--serif); font-size:clamp(1.2rem,2.2vw,1.8rem); font-weight:300; line-height:1.1; margin-bottom:0.5rem; }
+  .card-desc  { font-size:0.52rem; letter-spacing:0.05em; color:var(--dim); line-height:1.7; max-width:28ch; }
+  .card-link  {
+    display:inline-flex; align-items:center; gap:0.4rem; margin-top:0.8rem;
+    font-size:0.46rem; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--oro); border-bottom:1px solid rgba(201,169,97,0.3);
+    padding-bottom:0.15rem; transition:border-color 0.2s;
+  }
+  .card-link:hover { border-color:var(--oro); }
+
+  /* Footer */
+  .footer {
+    display:flex; justify-content:center; align-items:center;
+    gap:0.4rem; padding:0.5rem 0;
+    flex-shrink:0;
+  }
+  .dot {
+    width:4px; height:4px; border-radius:50%; background:var(--muted);
+    transition:all 0.3s var(--ease); cursor:pointer; border:none;
+  }
+  .dot.active { background:var(--oro); width:14px; border-radius:2px; }
+
+  .tag { position:fixed; bottom:1.5rem; right:1.5rem; z-index:50; font-size:0.44rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--dim); border:1px solid rgba(201,169,97,0.13); padding:0.28rem 0.55rem; background:rgba(10,25,41,0.85); backdrop-filter:blur(8px); }
+  .tag span { color:var(--oro); }
+</style>
+</head>
+<body>
+
+<div class="aurora">
+  <div class="ab ab-1"></div>
+  <div class="ab ab-2"></div>
+</div>
+
+<div class="page">
+
+  <nav class="nav">
+    <div class="logo"><span class="logo-a">Digital Evolution</span><span class="logo-b">Italy</span></div>
+    <div class="nav-right">Hover per esplorare</div>
+  </nav>
+
+  <div class="header">
+    <div class="h-left">
+      <p class="h-pre">Esperienze</p>
+      <h2 class="h-title">Ogni spazio, una storia.</h2>
+    </div>
+    <p class="h-hint">← → per navigare</p>
+  </div>
+
+  <div class="cards" id="cards" role="region" aria-label="Esperienze gallery">
+
+    <div class="card card-0 active" data-idx="0">
+      <img class="card-img" src="img/hotel-1.jpg" alt="Suite Panoramica"/>
+      <div class="card-overlay"></div>
+      <div class="card-active-line"></div>
+      <span class="card-label-compressed">Suite</span>
+      <div class="card-bottom">
+        <div class="card-content">
+          <p class="card-num">01 / 05</p>
+          <h3 class="card-name">Suite<br>Panoramica</h3>
+          <p class="card-desc">Vista sull'orizzonte, luce del mattino, silenzio assoluto. Il lusso è svegliarsi così.</p>
+          <span class="card-link">Scopri →</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-1" data-idx="1">
+      <img class="card-img" src="img/hotel-2.jpg" alt="Terrazza"/>
+      <div class="card-overlay"></div>
+      <div class="card-active-line"></div>
+      <span class="card-label-compressed">Terrazza</span>
+      <div class="card-bottom">
+        <div class="card-content">
+          <p class="card-num">02 / 05</p>
+          <h3 class="card-name">Terrazza<br>al Tramonto</h3>
+          <p class="card-desc">Ogni sera, il cielo prende fuoco. La terrazza infinita è il palcoscenico perfetto.</p>
+          <span class="card-link">Scopri →</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-2" data-idx="2">
+      <img class="card-img" src="img/hotel-3.jpg" alt="Ristorante"/>
+      <div class="card-overlay"></div>
+      <div class="card-active-line"></div>
+      <span class="card-label-compressed">Ristorante</span>
+      <div class="card-bottom">
+        <div class="card-content">
+          <p class="card-num">03 / 05</p>
+          <h3 class="card-name">Alta Cucina<br>Calabrese</h3>
+          <p class="card-desc">Ingredienti di territorio, tecnica contemporanea. Una cena che si ricorda.</p>
+          <span class="card-link">Scopri →</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-3" data-idx="3">
+      <img class="card-img" src="img/hotel-4.jpg" alt="SPA"/>
+      <div class="card-overlay"></div>
+      <div class="card-active-line"></div>
+      <span class="card-label-compressed">SPA</span>
+      <div class="card-bottom">
+        <div class="card-content">
+          <p class="card-num">04 / 05</p>
+          <h3 class="card-name">SPA &<br>Benessere</h3>
+          <p class="card-desc">Trattamenti esclusivi, rituali mediterranei. Il tempo si ferma, il corpo ringrazia.</p>
+          <span class="card-link">Scopri →</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-4" data-idx="4">
+      <img class="card-img" src="img/hotel-5.jpg" alt="Piscina"/>
+      <div class="card-overlay"></div>
+      <div class="card-active-line"></div>
+      <span class="card-label-compressed">Piscina</span>
+      <div class="card-bottom">
+        <div class="card-content">
+          <p class="card-num">05 / 05</p>
+          <h3 class="card-name">Infinity<br>Pool</h3>
+          <p class="card-desc">L'acqua incontra il mare. Nuotare con la linea dell'orizzonte davanti agli occhi.</p>
+          <span class="card-link">Scopri →</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Dots nav -->
+  <div class="footer" id="dotsNav"></div>
+
+</div>
+
+<div class="tag">Effetto: <span>Accordion Cards</span> · Digital Evolution Italy</div>
+
+<script>
+const cards = Array.from(document.querySelectorAll('.card'))
+const dotsNav = document.getElementById('dotsNav')
+let active = 0
+
+// Build dots
+cards.forEach((_, i) => {
+  const d = document.createElement('button')
+  d.className = 'dot' + (i===0 ? ' active' : '')
+  d.onclick = () => activate(i)
+  dotsNav.appendChild(d)
+})
+
+function activate(idx) {
+  cards[active].classList.remove('active')
+  active = idx
+  cards[active].classList.add('active')
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i===idx))
+}
+
+// Auto-advance
+let timer, paused = false
+const INTERVAL = 3200
+
+function resetTimer() {
+  clearInterval(timer)
+  if (!paused) timer = setInterval(() => activate((active + 1) % cards.length), INTERVAL)
+}
+
+// Pause on hover over the whole cards container
+const cardsEl = document.getElementById('cards')
+cardsEl.addEventListener('mouseenter', () => { paused = true;  clearInterval(timer) })
+cardsEl.addEventListener('mouseleave', () => { paused = false; resetTimer() })
+
+// Hover individual card
+cards.forEach((c, i) => {
+  c.addEventListener('mouseenter', () => { activate(i) })
+})
+
+// Click for mobile
+cards.forEach((c, i) => {
+  c.addEventListener('click', () => { activate(i); resetTimer() })
+})
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') { activate((active + 1) % cards.length); resetTimer() }
+  if (e.key === 'ArrowLeft')  { activate((active - 1 + cards.length) % cards.length); resetTimer() }
+})
+
+resetTimer()
+</script>
+</body>
+</html>

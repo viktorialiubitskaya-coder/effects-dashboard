@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rainbow Trail · Digital Evolution Italy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Courier New',monospace;cursor:none;background:#000}
+
+canvas{position:fixed;inset:0;z-index:0}
+
+.ui{
+  position:fixed;inset:0;z-index:10;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem;
+}
+.ui-pre{font-size:.44rem;letter-spacing:.32em;text-transform:uppercase;color:#fff}
+.ui-title{
+  font-family:Georgia,serif;font-weight:300;font-size:clamp(2.2rem,5.5vw,4.5rem);
+  line-height:1;text-align:center;color:#fff;
+}
+.ui-title em{
+  font-style:italic;
+  background:linear-gradient(135deg,#f472b6,#c084fc,#f472b6);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.ui-line{width:36px;height:1px;background:#f472b6}
+.ui-sub{font-size:.56rem;letter-spacing:.1em;text-align:center;
+  max-width:380px;line-height:1.8;color:rgba(255,255,255,.65)}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:20;pointer-events:none;
+  padding:1.2rem 2rem;display:flex;justify-content:space-between;
+  background:linear-gradient(to bottom,rgba(0,0,0,.45),transparent)}
+.logo-a{font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:#fff}
+.logo-b{font-size:.44rem;letter-spacing:.28em;text-transform:uppercase;opacity:.5;color:#fff}
+
+#dot{
+  position:fixed;z-index:100;pointer-events:none;
+  width:10px;height:10px;border-radius:50%;
+  background:#fff;border:none;
+  box-shadow:0 0 12px 4px rgba(255,255,255,.6);
+  transform:translate(-50%,-50%);
+}
+
+.tag{position:fixed;bottom:1.5rem;right:1.5rem;z-index:20;font-size:.42rem;
+  letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.12);padding:.26rem .52rem;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(8px);color:#fff}
+.tag span{color:#a78bfa}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="dot"></div>
+
+<nav class="nav">
+  <div>
+    <p class="logo-a">Digital Evolution</p>
+    <p class="logo-b">Italy · Rainbow Trail</p>
+  </div>
+</nav>
+
+<div class="ui">
+  <p class="ui-pre">Muovi il mouse</p>
+  <h1 class="ui-title">Dipingi<br>il tuo <em>sito web.</em></h1>
+  <div class="ui-line"></div>
+  <p class="ui-sub">Particelle arcobaleno che seguono il cursore.</p>
+</div>
+
+<div class="tag">Effetto: <span>Rainbow Trail</span> · Digital Evolution Italy</div>
+
+<script>
+const canvas = document.getElementById('c')
+const ctx    = canvas.getContext('2d')
+const dot    = document.getElementById('dot')
+
+let W, H
+function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight }
+resize(); window.addEventListener('resize', resize)
+
+let mx = W/2, my = H/2, pmx = mx, pmy = my
+let hue = 0, frameCount = 0
+let particles = []
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY
+  dot.style.left = mx + 'px'
+  dot.style.top  = my + 'px'
+})
+
+class Particle {
+  constructor(x, y) {
+    this.x = x + (Math.random()-.5)*0
+    this.y = y + (Math.random()-.5)*0
+    const angle = Math.random()*Math.PI*2
+    const spd   = Math.random()*2.5 + 0.3
+    this.vx = Math.cos(angle)*spd
+    this.vy = Math.sin(angle)*spd
+    this.size  = Math.random()*2.5 + 1
+    this.alpha = Math.random()*0.8 + 0.2
+    this.decay = Math.random()*0.018 + 0.009
+    this.drag  = 0.97
+    this.grav  = (Math.random()-.5)*0.05
+    this.color = `hsl(${hue},90%,65%)`
+    this.glowColor = `hsl(${hue},100%,70%)`
+  }
+  update(){
+    this.x += this.vx; this.y += this.vy
+    this.vx *= this.drag; this.vy *= this.drag
+    this.vy += this.grav
+    this.alpha -= this.decay
+    this.size  *= 0.993
+  }
+  draw(){
+    if (this.alpha<=0||this.size<=.2) return
+    ctx.save()
+    ctx.globalAlpha = Math.max(0, this.alpha)
+    ctx.fillStyle   = this.color
+    ctx.shadowColor = this.glowColor
+    ctx.shadowBlur  = 8
+    ctx.beginPath()
+    ctx.arc(this.x, this.y, Math.max(.1,this.size), 0, Math.PI*2)
+    ctx.fill()
+    ctx.restore()
+  }
+  dead(){ return this.alpha<=0 || this.size<=.2 }
+}
+
+function loop(){
+  requestAnimationFrame(loop)
+  frameCount++
+
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'
+  ctx.fillRect(0,0,W,H)
+
+  hue = (hue + 1.8) % 360
+
+  const spd   = Math.hypot(mx-pmx, my-pmy)
+  const count = Math.min(Math.ceil(spd*1.4), 20)
+  for (let i=0; i<count; i++){
+    const t = i/Math.max(count,1)
+    particles.push(new Particle(pmx+(mx-pmx)*t, pmy+(my-pmy)*t))
+  }
+  if (frameCount%3===0 && spd<1) particles.push(new Particle(mx,my))
+
+  particles = particles.filter(p => { p.update(); p.draw(); return !p.dead() })
+  pmx=mx; pmy=my
+}
+
+loop()
+</script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Immobiliare Carousel · Digital Evolution Italy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#EFECFA;
+  --text:#1a1826;
+  --t:.62s;
+  --ease:cubic-bezier(0.76,0,0.24,1);
+}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg)}
+
+.stage{position:fixed;inset:0;display:grid;grid-template-columns:42% 58%}
+
+/* ── LEFT ── */
+.left{
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:4rem 2rem 4rem 3.5rem;
+  z-index:2;
+}
+.pre-tag{font-size:.42rem;letter-spacing:.3em;text-transform:uppercase;color:rgba(0,0,0,.38);margin-bottom:.9rem}
+.main-title{font-size:clamp(2.4rem,4.2vw,3.6rem);font-weight:700;color:var(--text);line-height:1.1;margin-bottom:1.2rem}
+.main-title em{font-style:normal}
+.sub{font-size:.72rem;color:rgba(0,0,0,.42);line-height:1.75;max-width:270px;margin-bottom:2rem}
+.hint{font-size:.4rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(0,0,0,.26);margin-bottom:1.4rem}
+
+/* Nav */
+.nav-row{display:flex;align-items:center;gap:.9rem}
+.nav-btn{
+  width:38px;height:38px;border-radius:50%;
+  border:1.5px solid rgba(0,0,0,.15);background:#fff;
+  color:var(--accent,#6C5CE7);font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,border-color .2s,transform .15s,color .2s;
+}
+.nav-btn:hover{transform:scale(1.08)}
+.nav-btn:active{transform:scale(.93)}
+
+/* Flip counter */
+.counter-wrap{position:relative;width:52px;height:18px;overflow:hidden;font-size:.5rem;letter-spacing:.12em;color:rgba(0,0,0,.38)}
+.counter-val{
+  position:absolute;left:0;top:0;width:100%;
+  transition:transform .35s var(--ease),opacity .28s;
+}
+.counter-val.exit-up{transform:translateY(-110%);opacity:0}
+.counter-val.enter-dn{transform:translateY(110%);opacity:0}
+
+/* Decorative circles — parallax via CSS var */
+.circles{
+  position:absolute;right:-90px;top:50%;
+  transform:translateY(-50%) translateX(var(--cx,0px));
+  pointer-events:none;z-index:0;
+  transition:transform .9s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.circle{
+  position:absolute;border-radius:50%;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.c1{width:190px;height:190px;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.1)}
+.c2{width:330px;height:330px;border:1px solid rgba(0,0,0,.07);background:rgba(239,236,250,.6)}
+.c3{width:490px;height:490px;border:1px solid rgba(0,0,0,.04);background:rgba(239,236,250,.3)}
+
+/* Vertical progress bar */
+.progress-bar{
+  position:fixed;right:1.4rem;top:50%;
+  transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:6px;
+  z-index:20;
+}
+.prog-dot{
+  width:4px;height:4px;border-radius:2px;
+  background:rgba(0,0,0,.18);cursor:pointer;
+  transition:height .35s var(--ease),background .35s,border-radius .35s;
+}
+.prog-dot.active{height:22px;border-radius:2px;background:var(--accent,#6C5CE7)}
+
+/* ── RIGHT: Card stack ── */
+.right{
+  position:relative;overflow:hidden;
+  display:flex;align-items:center;
+  padding:0 3rem 0 0;
+}
+
+.prop-card{
+  position:absolute;
+  left:0;top:50%;
+  background:#fff;
+  border-radius:16px;
+  display:flex;align-items:center;gap:1rem;
+  padding:0 1.4rem 0 0;
+  cursor:pointer;
+  border-left:4px solid transparent;
+  overflow:hidden;
+  transition:
+    width var(--t) var(--ease),
+    height var(--t) var(--ease),
+    transform var(--t) var(--ease),
+    opacity var(--t) ease,
+    box-shadow var(--t) ease,
+    border-left-color .35s;
+  will-change:transform,width,height,opacity;
+}
+.prop-card[data-state="active"]{
+  box-shadow:0 18px 56px rgba(0,0,0,.13);
+  border-left-color:var(--accent,#6C5CE7);
+  z-index:5;
+}
+.prop-card[data-state="n1"]{opacity:.72;box-shadow:0 4px 18px rgba(0,0,0,.07);z-index:4}
+.prop-card[data-state="n2"]{opacity:.32;box-shadow:0 2px 8px rgba(0,0,0,.05);z-index:3}
+
+/* Card photo */
+.card-photo{
+  flex-shrink:0;
+  width:0;height:100%;
+  overflow:hidden;
+  transition:width var(--t) var(--ease);
+  background:#e8e4f6;
+}
+.card-photo img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.prop-card[data-state="active"] .card-photo{width:110px}
+.prop-card[data-state="n1"]    .card-photo{width:70px}
+.prop-card[data-state="n2"]    .card-photo{width:50px}
+
+/* Card body */
+.card-body{flex:1;min-width:0;padding:.9rem 0}
+.card-type{font-size:.38rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;margin-bottom:.2rem;transition:color .3s}
+.card-name{font-size:.9rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.15rem}
+.card-location{font-size:.58rem;color:rgba(0,0,0,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Expanded details — only visible on active */
+.card-desc{
+  font-size:.58rem;color:rgba(0,0,0,.38);line-height:1.5;
+  max-height:0;overflow:hidden;margin-top:0;
+  transition:max-height .5s var(--ease),margin-top .3s;
+}
+.prop-card[data-state="active"] .card-desc{max-height:60px;margin-top:.4rem}
+
+/* Card right */
+.card-right{text-align:right;flex-shrink:0;padding:.9rem 0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end}
+.card-price{font-size:1rem;font-weight:700;transition:color .3s}
+.card-details{font-size:.55rem;color:rgba(0,0,0,.38)}
+.card-badge{
+  display:inline-block;font-size:.36rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:.18rem .48rem;border-radius:4px;border-width:1px;border-style:solid;
+  transition:background .3s,color .3s,border-color .3s;
+}
+.card-cta{
+  display:inline-block;font-size:.42rem;letter-spacing:.08em;font-weight:600;
+  padding:.28rem .7rem;border-radius:6px;color:#fff;
+  max-height:0;overflow:hidden;opacity:0;
+  transition:max-height .4s var(--ease),opacity .35s,background .3s;
+  pointer-events:none;
+}
+.prop-card[data-state="active"] .card-cta{max-height:40px;opacity:1;pointer-events:auto}
+
+/* Autoplay progress ring */
+.autoplay-ring{
+  position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%);
+  width:28px;height:28px;z-index:20;opacity:.4;
+}
+.ring-track{fill:none;stroke:rgba(0,0,0,.12);stroke-width:2}
+.ring-fill{fill:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:75.4;stroke-dashoffset:75.4;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke .3s}
+
+/* Footer */
+.footer-tag{
+  position:fixed;bottom:1rem;right:1.5rem;z-index:20;
+  font-size:.36rem;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(0,0,0,.28);border:1px solid rgba(0,0,0,.1);
+  padding:.2rem .44rem;border-radius:2px;
+}
+.footer-tag em{color:rgba(0,0,0,.45);font-style:normal}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="left">
+    <div class="circles" id="circles">
+      <div class="circle c3"></div>
+      <div class="circle c2"></div>
+      <div class="circle c1"></div>
+    </div>
+    <p class="pre-tag">Immobiliare · Calabria Sud Italia</p>
+    <h1 class="main-title" id="mainTitle">La tua casa<br>in <em id="titleAccent">Calabria</em></h1>
+    <p class="sub">Ville, appartamenti e masserie in vendita nei luoghi più belli del Sud Italia.</p>
+    <p class="hint">↑ ↓ scorri · clicca la carta</p>
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn" style="border-color:rgba(108,92,231,.3);color:#6C5CE7">↑</button>
+      <div class="counter-wrap">
+        <div class="counter-val" id="counterEl">01 / 06</div>
+      </div>
+      <button class="nav-btn" id="nextBtn" style="border-color:rgba(108,92,231,.3);color:#6C5CE7">↓</button>
+    </div>
+  </div>
+
+  <div class="right" id="cardsWrap"></div>
+</div>
+
+<!-- vertical progress -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- autoplay ring -->
+<svg class="autoplay-ring" viewBox="0 0 28 28">
+  <circle class="ring-track" cx="14" cy="14" r="12"/>
+  <circle class="ring-fill" id="ringFill" cx="14" cy="14" r="12"/>
+</svg>
+
+<div class="footer-tag">Effetto: <em>Vertical Carousel</em> · Immobiliare · Digital Evolution Italy</div>
+
+<script>
+const SLIDES = [
+  { img:'img/immobiliare/p-1.jpg', color:'#6C5CE7', type:'Villa',       name:'Villa Fronte Mare',      location:'Tropea, Vibo Valentia',      sqm:'280 m²', rooms:'4 camere', price:'€ 850.000', badge:'Vendita', desc:'Piscina a sfioro con vista sul Tirreno, terrazza panoramica, giardino mediterraneo.' },
+  { img:'img/immobiliare/p-2.jpg', color:'#00897B', type:'Masseria',    name:'Masseria Storica',        location:'Altomonte, Cosenza',          sqm:'520 m²', rooms:'6 camere', price:'€ 620.000', badge:'Vendita', desc:'Pietra locale originale, frantoio restaurato, 4 ettari di oliveto secolare.' },
+  { img:'img/immobiliare/p-3.jpg', color:'#1565C0', type:'Attico',      name:'Penthouse sul Porto',     location:'Reggio Calabria, RC',         sqm:'210 m²', rooms:'5 camere', price:'€ 430.000', badge:'Vendita', desc:'Roof terrace 80 m², vista sullo Stretto di Messina, doppio garage.' },
+  { img:'img/immobiliare/p-4.jpg', color:'#8D6E63', type:'Casa',        name:'Casa nel Borgo Antico',   location:'Gerace, Reggio Calabria',     sqm:'160 m²', rooms:'4 camere', price:'€ 195.000', badge:'Vendita', desc:'Centro storico UNESCO, affreschi originali, cantina in tufo, pozzo antico.' },
+  { img:'img/immobiliare/p-5.jpg', color:'#0277BD', type:'Appartamento',name:'Attico Vista Mare',       location:'Scilla, Reggio Calabria',     sqm:'95 m²',  rooms:'3 camere', price:'€ 285.000', badge:'Vendita', desc:'Terzo piano con ascensore, loggia panoramica, 50 m dalla spiaggia.' },
+  { img:'img/immobiliare/p-6.jpg', color:'#558B2F', type:'Bilocale',    name:'Vista Mediterraneo',      location:'Capo Vaticano, Vibo Valentia',sqm:'68 m²',  rooms:'2 camere', price:'€ 148.000', badge:'Affitto', desc:'Arredato, posto barca incluso, piscina condominiale, a 5 min dal mare.' },
+]
+
+const SZ  = { active:{w:560,h:148}, n1:{w:500,h:98}, n2:{w:450,h:78} }
+const GAP = 16
+const N   = SLIDES.length
+let cur = 0, busy = false, paused = false
+let autoTimer = null, ringTimer = null
+
+const wrap     = document.getElementById('cardsWrap')
+const circles  = document.getElementById('circles')
+const counterEl= document.getElementById('counterEl')
+const titleAccent = document.getElementById('titleAccent')
+const ringFill = document.getElementById('ringFill')
+const progressBar = document.getElementById('progressBar')
+
+// Build cards
+SLIDES.forEach((s, i) => {
+  const c = document.createElement('div')
+  c.className = 'prop-card'
+  c.innerHTML = `
+    <div class="card-photo"><img src="${s.img}" loading="eager" alt="${s.name}"/></div>
+    <div class="card-body">
+      <div class="card-type" style="color:${s.color}">${s.type}</div>
+      <div class="card-name">${s.name}</div>
+      <div class="card-location">📍 ${s.location}</div>
+      <div class="card-desc">${s.desc}</div>
+    </div>
+    <div class="card-right">
+      <div class="card-price" style="color:${s.color}">${s.price}</div>
+      <div class="card-details">${s.sqm} · ${s.rooms}</div>
+      <span class="card-badge" style="color:${s.color};border-color:${s.color}33;background:${s.color}11">${s.badge}</span>
+      <span class="card-cta" style="background:${s.color}">Scopri di più →</span>
+    </div>`
+  c.addEventListener('click', () => goTo(i))
+  wrap.appendChild(c)
+})
+const cards = [...wrap.querySelectorAll('.prop-card')]
+
+// Build progress dots
+SLIDES.forEach((_, i) => {
+  const d = document.createElement('div')
+  d.className = 'prog-dot'
+  d.style.background = 'rgba(0,0,0,.18)'
+  d.addEventListener('click', () => goTo(i))
+  progressBar.appendChild(d)
+})
+const dots = [...progressBar.querySelectorAll('.prog-dot')]
+
+function stateOf(ci, ai) {
+  const d = Math.abs(ci - ai)
+  return d === 0 ? 'active' : d === 1 ? 'n1' : 'n2'
+}
+
+function cardY(ci, ai) {
+  if (ci === ai) return 0
+  const sign = ci > ai ? 1 : -1
+  let y = 0, prev = ai, step = ai + sign
+  while (prev !== ci) {
+    y += sign * (SZ[stateOf(prev,ai)].h / 2 + GAP + SZ[stateOf(step,ai)].h / 2)
+    prev = step; step += sign
+  }
+  return y
+}
+
+function layoutCards(ai) {
+  cards.forEach((c, i) => {
+    const st = stateOf(i, ai)
+    const sz = SZ[st]
+    c.dataset.state = st
+    c.style.width     = sz.w + 'px'
+    c.style.height    = sz.h + 'px'
+    c.style.transform = `translate(0, calc(-50% + ${cardY(i, ai)}px))`
+    c.style.zIndex    = st === 'active' ? 5 : st === 'n1' ? 4 : 3
+  })
+  dots.forEach((d, i) => {
+    const active = i === ai
+    d.classList.toggle('active', active)
+    d.style.background = active ? SLIDES[ai].color : 'rgba(0,0,0,.18)'
+  })
+}
+
+// Flip counter
+function flipCounter(newVal) {
+  const wrap = document.querySelector('.counter-wrap')
+  const old  = wrap.querySelector('.counter-val')
+  if (old) { old.classList.add('exit-up'); setTimeout(() => old.remove(), 360) }
+  const next = document.createElement('div')
+  next.className = 'counter-val enter-dn'
+  next.textContent = newVal
+  wrap.appendChild(next)
+  requestAnimationFrame(() => requestAnimationFrame(() => next.classList.remove('enter-dn')))
+}
+
+// Parallax circles — shift by ±12px based on slide index fraction
+function updateCircles(ai) {
+  const frac = (ai / (N - 1) - 0.5) * 2   // -1 to +1
+  circles.style.setProperty('--cx', (frac * 14) + 'px')
+}
+
+// Accent color update
+function updateAccent(ai) {
+  const col = SLIDES[ai].color
+  titleAccent.style.color = col
+  document.querySelector('#prevBtn').style.color = col
+  document.querySelector('#prevBtn').style.borderColor = col + '55'
+  document.querySelector('#nextBtn').style.color = col
+  document.querySelector('#nextBtn').style.borderColor = col + '55'
+  ringFill.style.stroke = col
+}
+
+function goTo(idx) {
+  idx = ((idx % N) + N) % N
+  if (busy || idx === cur) return
+  busy = true
+  const oldCur = cur
+  cur = idx
+  layoutCards(cur)
+  flipCounter(String(cur+1).padStart(2,'0') + ' / ' + String(N).padStart(2,'0'))
+  updateCircles(cur)
+  updateAccent(cur)
+  setTimeout(() => { busy = false }, 680)
+  restartAutoplay()
+}
+
+// ── Autoplay ──
+const DELAY = 3500
+function startAutoplay() {
+  clearInterval(autoTimer)
+  clearInterval(ringTimer)
+  if (paused) return
+  let elapsed = 0
+  const step = 30
+  ringTimer = setInterval(() => {
+    if (paused) return
+    elapsed += step
+    const pct = elapsed / DELAY
+    ringFill.style.strokeDashoffset = 75.4 * (1 - pct)
+    if (elapsed >= DELAY) {
+      clearInterval(ringTimer)
+    }
+  }, step)
+  autoTimer = setTimeout(() => {
+    if (!paused) goTo(cur + 1)
+  }, DELAY)
+}
+
+function restartAutoplay() {
+  ringFill.style.transition = 'none'
+  ringFill.style.strokeDashoffset = 75.4
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    ringFill.style.transition = ''
+    startAutoplay()
+  }))
+}
+
+wrap.addEventListener('mouseenter', () => { paused = true; clearTimeout(autoTimer); clearInterval(ringTimer) })
+wrap.addEventListener('mouseleave', () => { paused = false; restartAutoplay() })
+
+// Init
+cards.forEach(c => { c.style.transition='none'; c.style.opacity='0'; c.style.transform='translate(0,60px)' })
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  cards.forEach(c => { c.style.transition=''; c.style.opacity='' })
+  layoutCards(0)
+  updateAccent(0)
+  updateCircles(0)
+  restartAutoplay()
+}))
+
+// Input
+document.getElementById('prevBtn').addEventListener('click', () => goTo(cur - 1))
+document.getElementById('nextBtn').addEventListener('click', () => goTo(cur + 1))
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowDown'||e.key==='ArrowRight') goTo(cur+1)
+  if (e.key==='ArrowUp'  ||e.key==='ArrowLeft')  goTo(cur-1)
+})
+
+let wLock = false
+document.addEventListener('wheel', e => {
+  if (wLock || Math.abs(e.deltaY) < 20) return
+  wLock = true
+  goTo(e.deltaY > 0 ? cur+1 : cur-1)
+  setTimeout(() => { wLock = false }, 750)
+},{passive:true})
+
+let sy = 0
+document.addEventListener('touchstart', e => { sy = e.touches[0].clientY; paused = true },{passive:true})
+document.addEventListener('touchend', e => {
+  const dy = sy - e.changedTouches[0].clientY
+  if (Math.abs(dy) > 40) goTo(dy > 0 ? cur+1 : cur-1)
+  paused = false; restartAutoplay()
+},{passive:true})
+</script>
+</body>
+</html>

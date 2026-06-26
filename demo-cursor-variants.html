@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cursor Variants · Digital Evolution Italy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Courier New',monospace;cursor:none}
+
+canvas{position:fixed;inset:0;z-index:0}
+
+/* ── UI CENTER ───────────────────────────────────────────── */
+.ui{
+  position:fixed;inset:0;z-index:10;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem;
+}
+.ui-pre{font-size:.44rem;letter-spacing:.32em;text-transform:uppercase;transition:color .5s}
+.ui-title{
+  font-family:Georgia,serif;font-weight:300;font-size:clamp(2.2rem,5.5vw,4.5rem);
+  line-height:1;text-align:center;transition:color .5s;
+}
+.ui-title em{font-style:italic}
+.ui-line{width:36px;height:1px;transition:background .5s}
+.ui-sub{font-size:.56rem;letter-spacing:.1em;text-align:center;
+  max-width:380px;line-height:1.8;transition:color .5s}
+
+/* ── NAV ─────────────────────────────────────────────────── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:20;pointer-events:none;
+  padding:1.2rem 2rem;display:flex;justify-content:space-between;
+  background:linear-gradient(to bottom,rgba(0,0,0,.45),transparent)}
+.logo-a{font-size:.58rem;letter-spacing:.22em;text-transform:uppercase}
+.logo-b{font-size:.44rem;letter-spacing:.28em;text-transform:uppercase;opacity:.5}
+
+/* ── VARIANT SWITCHER ────────────────────────────────────── */
+.switcher{
+  position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
+  z-index:20;pointer-events:auto;
+  display:flex;gap:.5rem;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(12px);
+  border-radius:40px;padding:.5rem .6rem;
+  border:1px solid rgba(255,255,255,.1);
+}
+.sw{
+  font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;
+  padding:.38rem .9rem;border-radius:30px;border:none;cursor:pointer;
+  transition:background .25s,color .25s,transform .2s;
+  background:transparent;color:rgba(255,255,255,.45);
+}
+.sw:hover{color:#fff;transform:scale(1.04)}
+.sw.active{color:#000;font-weight:700}
+
+/* ── CUSTOM CURSOR ───────────────────────────────────────── */
+#cursor{
+  position:fixed;z-index:100;pointer-events:none;
+  transform:translate(-50%,-50%);
+  transition:width .25s,height .25s,border-color .25s,background .25s;
+}
+
+/* ── TAG ─────────────────────────────────────────────────── */
+.tag{position:fixed;bottom:1.5rem;right:1.5rem;z-index:20;font-size:.42rem;
+  letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.12);padding:.26rem .52rem;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(8px)}
+.tag span{color:#a78bfa}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="cursor"></div>
+
+<nav class="nav">
+  <div>
+    <p class="logo-a" id="navA">Digital Evolution</p>
+    <p class="logo-b" id="navB">Italy · Cursor Variants</p>
+  </div>
+</nav>
+
+<div class="ui">
+  <p class="ui-pre" id="uiPre">Muovi il mouse</p>
+  <h1 class="ui-title" id="uiTitle">Dipingi<br>il tuo <em>sito web.</em></h1>
+  <div class="ui-line" id="uiLine"></div>
+  <p class="ui-sub" id="uiSub">Particelle colorate che seguono ogni tuo movimento. Un effetto che trasforma la navigazione in un'esperienza visiva.</p>
+</div>
+
+<div class="switcher">
+  <button class="sw active" onclick="setVariant(0)">🎨 Rainbow</button>
+  <button class="sw" onclick="setVariant(1)">✨ Fairy Dust</button>
+  <button class="sw" onclick="setVariant(2)">🖋 Ink Drop</button>
+  <button class="sw" onclick="setVariant(3)">⚡ Neon</button>
+</div>
+
+<div class="tag">Effetto: <span>Cursor Variants</span> · Digital Evolution Italy</div>
+
+<script>
+const canvas = document.getElementById('c')
+const ctx    = canvas.getContext('2d')
+const cursorEl = document.getElementById('cursor')
+
+let W, H
+function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight }
+resize(); window.addEventListener('resize', resize)
+
+let mx = W/2, my = H/2, pmx = mx, pmy = my
+let hue = 0, frameCount = 0
+let particles = []
+let variant = 0
+
+// ── cursor follow ─────────────────────────────────────────
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY
+  cursorEl.style.left = mx + 'px'
+  cursorEl.style.top  = my + 'px'
+})
+
+// ── Particle ──────────────────────────────────────────────
+class Particle {
+  constructor(x, y, opts) {
+    this.x = x + (Math.random()-.5)*(opts.spread||0)
+    this.y = y + (Math.random()-.5)*(opts.spread||0)
+    const angle = Math.random()*Math.PI*2
+    const spd   = Math.random()*(opts.maxSpd||2.5) + (opts.minSpd||0.3)
+    this.vx = Math.cos(angle)*spd
+    this.vy = Math.sin(angle)*spd
+    this.size  = Math.random()*(opts.maxSize||3.5) + (opts.minSize||1)
+    this.alpha = Math.random()*(opts.maxAlpha||0.8) + 0.2
+    this.decay = Math.random()*0.018 + (opts.decay||0.008)
+    this.drag  = opts.drag  || 0.97
+    this.grav  = opts.grav  || (Math.random()-.5)*0.05
+    this.color = opts.color(this)
+    this.glow  = opts.glow  || null
+    this.shape = opts.shape || 'circle'
+  }
+  update(){
+    this.x += this.vx; this.y += this.vy
+    this.vx *= this.drag; this.vy *= this.drag
+    this.vy += this.grav
+    this.alpha -= this.decay
+    this.size  *= 0.993
+  }
+  draw(){
+    if (this.alpha<=0||this.size<=.2) return
+    ctx.save()
+    ctx.globalAlpha = Math.max(0, this.alpha)
+    ctx.fillStyle   = this.color
+    if (this.glow){ ctx.shadowColor = this.glow; ctx.shadowBlur = 10 }
+    if (this.shape==='star') {
+      ctx.translate(this.x, this.y)
+      ctx.rotate(frameCount*.05)
+      drawStar(ctx, 0, 0, 4, this.size, this.size*.45)
+      ctx.fillStyle = this.color
+      ctx.fill()
+    } else if (this.shape==='drop') {
+      ctx.beginPath()
+      ctx.ellipse(this.x, this.y, this.size*.6, this.size, 0, 0, Math.PI*2)
+      ctx.fill()
+    } else {
+      ctx.beginPath()
+      ctx.arc(this.x, this.y, Math.max(.1,this.size), 0, Math.PI*2)
+      ctx.fill()
+    }
+    ctx.restore()
+  }
+  dead(){ return this.alpha<=0 || this.size<=.2 }
+}
+
+function drawStar(ctx, cx, cy, spikes, ro, ri){
+  let rot = Math.PI/2*3, step = Math.PI/spikes
+  ctx.beginPath(); ctx.moveTo(cx, cy-ro)
+  for(let i=0;i<spikes;i++){
+    ctx.lineTo(cx+Math.cos(rot)*ro, cy+Math.sin(rot)*ro); rot+=step
+    ctx.lineTo(cx+Math.cos(rot)*ri, cy+Math.sin(rot)*ri); rot+=step
+  }
+  ctx.lineTo(cx, cy-ro); ctx.closePath()
+}
+
+// ── Variant configs ───────────────────────────────────────
+const VARIANTS = [
+  // 0 Rainbow
+  {
+    bg:     () => { ctx.fillStyle='rgba(0,0,0,0.18)'; ctx.fillRect(0,0,W,H) },
+    body:   '#000',
+    textBg: '#fff',
+    cursor: { w:10, h:10, r:'50%', bg:'#fff', border:'none', shadow:'0 0 12px 4px rgba(255,255,255,.6)' },
+    spawn: (sx, sy) => new Particle(sx, sy, {
+      color: () => `hsl(${hue},90%,65%)`,
+      glow:  `hsl(${hue},100%,70%)`,
+      maxSize:3.5, maxSpd:2.8, decay:.009,
+    }),
+    count: s => Math.min(Math.ceil(s*1.4),20),
+    tick: () => { hue=(hue+1.8)%360 },
+    uiPre:   'Muovi il mouse',
+    uiTitle: 'Dipingi<br>il tuo <em>sito web.</em>',
+    uiSub:   'Particelle arcobaleno che seguono il cursore. Hue HSL ciclico per un effetto sempre diverso.',
+    uiColor: '#fff',
+    uiAccent:'#f472b6',
+    swBg:    '#fff',
+    swColor: '#000',
+    navColor:'#fff',
+  },
+  // 1 Fairy Dust
+  {
+    bg:  () => { ctx.fillStyle='rgba(5,8,20,0.2)'; ctx.fillRect(0,0,W,H) },
+    body:'#05081a',
+    textBg:'#fff',
+    cursor:{ w:12, h:12, r:'50%', bg:'transparent', border:'1.5px solid rgba(201,169,97,.8)', shadow:'0 0 10px rgba(201,169,97,.5)' },
+    spawn: (sx, sy) => new Particle(sx, sy, {
+      color: () => {
+        const golds=['#c9a961','#f5e6a3','#fff8d4','#e8c96a','#fffbe8']
+        return golds[Math.floor(Math.random()*golds.length)]
+      },
+      glow:'rgba(255,220,100,.8)',
+      shape: Math.random()>.5?'star':'circle',
+      maxSize:3.2, minSize:.8, maxSpd:2.2, minSpd:.5,
+      decay:.012, drag:.965, grav:0.04,
+    }),
+    count: s => Math.min(Math.ceil(s*1.2)+1, 16),
+    tick: ()=>{},
+    uiPre:   'Esperienza esclusiva',
+    uiTitle: 'Ogni dettaglio<br>è <em>oro.</em>',
+    uiSub:   'Polvere dorata che segue il cursore. L\'effetto perfetto per hotel di lusso, gioiellerie e brand premium.',
+    uiColor: 'rgba(245,230,160,.9)',
+    uiAccent:'#c9a961',
+    swBg:    '#c9a961',
+    swColor: '#050d18',
+    navColor:'rgba(245,230,160,.8)',
+  },
+  // 2 Ink Drop
+  {
+    bg:  () => { ctx.fillStyle='rgba(245,240,230,0.22)'; ctx.fillRect(0,0,W,H) },
+    body:'#f5f0e6',
+    textBg:'#1a1208',
+    cursor:{ w:14, h:14, r:'50%', bg:'rgba(26,18,8,0.85)', border:'none', shadow:'0 2px 10px rgba(0,0,0,.25)' },
+    spawn: (sx, sy) => new Particle(sx, sy, {
+      color: () => {
+        const inks=['rgba(20,10,5,.85)','rgba(40,20,8,.7)','rgba(80,40,10,.5)','rgba(120,60,15,.35)']
+        return inks[Math.floor(Math.random()*inks.length)]
+      },
+      glow: null,
+      shape:'drop',
+      maxSize:6, minSize:2, maxSpd:1.8, minSpd:.2,
+      decay:.006, drag:.94, grav:0.12,
+    }),
+    count: s => Math.min(Math.ceil(s*1.0)+1, 14),
+    tick: ()=>{},
+    uiPre:   'Scrittura creativa',
+    uiTitle: 'Ogni parola<br><em>lascia il segno.</em>',
+    uiSub:   'Gocce d\'inchiostro che cadono al passaggio del cursore. Ideale per studi legali, editori e brand artigianali.',
+    uiColor: '#1a1208',
+    uiAccent:'#6b3a10',
+    swBg:    '#1a1208',
+    swColor: '#f5f0e6',
+    navColor:'#1a1208',
+  },
+  // 3 Neon
+  {
+    bg:  () => { ctx.fillStyle='rgba(0,0,8,0.15)'; ctx.fillRect(0,0,W,H) },
+    body:'#00000a',
+    textBg:'#fff',
+    cursor:{ w:8, h:8, r:'50%', bg:'#00ffcc', border:'none', shadow:'0 0 16px 6px rgba(0,255,180,.7)' },
+    spawn: (sx, sy) => new Particle(sx, sy, {
+      color: () => {
+        const cols=['#00ffcc','#00e5ff','#7c3aed','#06b6d4','#a3e635']
+        return cols[Math.floor(Math.random()*cols.length)]
+      },
+      glow:'rgba(0,255,200,.9)',
+      maxSize:2.8, minSize:.5, maxSpd:1.8, minSpd:.2,
+      decay:.014, drag:.975, grav:0,
+    }),
+    count: s => Math.min(Math.ceil(s*1.6)+2, 24),
+    tick: ()=>{},
+    uiPre:   'Tecnologia & Innovazione',
+    uiTitle: 'Il futuro<br>è <em>adesso.</em>',
+    uiSub:   'Traccia neon che segue ogni movimento. Perfetto per startup tech, portfolio digitali e agenzie creative.',
+    uiColor: '#00ffcc',
+    uiAccent:'#7c3aed',
+    swBg:    '#00ffcc',
+    swColor: '#000',
+    navColor:'#00ffcc',
+  },
+]
+
+// ── Apply variant ─────────────────────────────────────────
+function setVariant(idx) {
+  variant = idx
+  particles = []
+  const v = VARIANTS[idx]
+
+  // body bg
+  document.body.style.background = v.body
+
+  // cursor style
+  const c = v.cursor
+  Object.assign(cursorEl.style, {
+    width:c.w+'px', height:c.h+'px', borderRadius:c.r,
+    background:c.bg, border:c.border||'none', boxShadow:c.shadow||'none',
+  })
+
+  // ui text
+  document.getElementById('uiPre').style.color   = v.uiColor
+  document.getElementById('uiTitle').style.color  = v.uiColor
+  document.getElementById('uiLine').style.background = v.uiAccent
+  document.getElementById('uiSub').style.color    = v.uiColor+'aa'
+  document.getElementById('uiTitle').innerHTML    = v.uiTitle
+  document.getElementById('uiPre').textContent    = v.uiPre
+  document.getElementById('uiSub').textContent    = v.uiSub
+  document.getElementById('navA').style.color     = v.navColor
+  document.getElementById('navB').style.color     = v.navColor+'66'
+
+  // switcher buttons
+  document.querySelectorAll('.sw').forEach((b,i) => {
+    b.classList.toggle('active', i===idx)
+    b.style.background = (i===idx) ? VARIANTS[i].swBg : 'transparent'
+    b.style.color      = (i===idx) ? VARIANTS[i].swColor : 'rgba(255,255,255,.45)'
+  })
+
+  // clear canvas with new bg
+  ctx.clearRect(0,0,W,H)
+}
+
+// ── Main loop ─────────────────────────────────────────────
+function loop(){
+  requestAnimationFrame(loop)
+  frameCount++
+  const v = VARIANTS[variant]
+
+  v.bg()
+  v.tick()
+
+  const spd = Math.hypot(mx-pmx, my-pmy)
+  const count = v.count(spd)
+  for (let i=0; i<count; i++){
+    const t = i/Math.max(count,1)
+    particles.push(v.spawn(pmx+(mx-pmx)*t, pmy+(my-pmy)*t))
+  }
+  if (frameCount%3===0 && spd<1) particles.push(v.spawn(mx,my))
+
+  particles = particles.filter(p => { p.update(); p.draw(); return !p.dead() })
+  pmx=mx; pmy=my
+}
+
+setVariant(0)
+loop()
+</script>
+</body>
+</html>

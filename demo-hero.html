@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hero · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --bg:#050d18; --surface:#0a1929;
+    --border:rgba(201,169,97,0.13);
+    --oro:#c9a961; --oro-dim:rgba(201,169,97,0.3);
+    --text:#f5f1e8; --dim:rgba(245,241,232,0.45); --muted:rgba(245,241,232,0.18);
+    --serif:Georgia,'Times New Roman',serif; --mono:'Courier New',monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  html { background:var(--bg); }
+  body {
+    background:var(--bg); color:var(--text); font-family:var(--mono);
+    /* page taller than viewport → hero parallaxes */
+    height:230vh;
+  }
+
+  /* Aurora */
+  .aurora { position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .ab { position:absolute; border-radius:50%; }
+  .ab-1 { width:1000px; height:600px; top:-180px; left:-300px;
+    background:radial-gradient(ellipse,rgba(26,80,200,1) 0%,transparent 65%);
+    filter:blur(110px); opacity:0.06;
+    animation:ab1 55s ease-in-out infinite alternate; }
+  .ab-2 { width:700px; height:700px; top:10%; right:-200px;
+    background:radial-gradient(ellipse,rgba(150,90,5,1) 0%,transparent 65%);
+    filter:blur(120px); opacity:0.055;
+    animation:ab2 68s ease-in-out infinite alternate; animation-delay:-22s; }
+  .ab-3 { width:800px; height:450px; bottom:-100px; left:25%;
+    background:radial-gradient(ellipse,rgba(70,15,130,1) 0%,transparent 65%);
+    filter:blur(100px); opacity:0.04;
+    animation:ab3 46s ease-in-out infinite alternate; animation-delay:-14s; }
+  @keyframes ab1 { from{transform:translate(0,0)} to{transform:translate(130px,90px)} }
+  @keyframes ab2 { from{transform:translate(0,0)} to{transform:translate(-100px,60px)} }
+  @keyframes ab3 { from{transform:translate(0,0)} to{transform:translate(70px,-80px)} }
+
+  /* Dot grid */
+  .hero::before {
+    content:''; position:absolute; inset:0;
+    background-image:radial-gradient(circle,rgba(201,169,97,0.04) 1px,transparent 1px);
+    background-size:44px 44px; pointer-events:none; z-index:0;
+  }
+
+  /* ── Hero — sticky ── */
+  .hero {
+    position:sticky; top:0; height:100vh; overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    position:relative; z-index:10;
+    padding:1.5rem clamp(2rem,6vw,6rem);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .logo { display:flex; flex-direction:column; gap:0.15rem; }
+  .logo-a { font-size:0.6rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--text); }
+  .logo-b { font-size:0.44rem; letter-spacing:0.28em; text-transform:uppercase; color:var(--oro); }
+  .nav-links { display:flex; gap:2rem; align-items:center; }
+  .nav-link { font-size:0.5rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--dim); cursor:pointer; transition:color 0.2s; }
+  .nav-link:hover { color:var(--text); }
+  .nav-cta { font-size:0.5rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--oro); border:1px solid var(--border); padding:0.45rem 1rem; cursor:pointer; transition:all 0.2s; background:none; font-family:var(--mono); }
+  .nav-cta:hover { background:rgba(201,169,97,0.07); border-color:var(--oro-dim); }
+
+  /* ── Content ── */
+  .content {
+    position:relative; z-index:5;
+    flex:1; display:flex; flex-direction:column; justify-content:center;
+    padding:0 clamp(2rem,6vw,6rem);
+    gap:clamp(1.5rem,3vh,2.5rem);
+  }
+
+  /* Tag line */
+  .tag-line {
+    font-size:0.48rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--oro);
+    opacity:0;
+    transition:opacity 0.8s var(--ease);
+  }
+  .tag-line.in { opacity:1; }
+
+  /* Headline: curtain reveal per line */
+  .headline { display:flex; flex-direction:column; gap:0.1rem; }
+  .hl-wrap { overflow:hidden; }
+  .hl {
+    font-family:var(--serif); font-weight:300; line-height:0.92;
+    font-size:clamp(3.5rem,8.5vw,8.5rem);
+    transform:translateY(108%);
+    transition:transform 0.95s var(--ease);
+    display:block;
+    will-change:transform;
+  }
+  .hl-wrap.in .hl { transform:translateY(0); }
+  .hl em { font-style:italic; color:var(--oro); }
+
+  /* Subtitle */
+  .sub {
+    font-size:clamp(0.65rem,1.1vw,0.85rem); letter-spacing:0.06em;
+    color:var(--dim); line-height:1.8; max-width:52ch;
+    opacity:0; transform:translateY(14px);
+    transition:opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  }
+  .sub.in { opacity:1; transform:none; }
+
+  /* CTA row */
+  .cta-row {
+    display:flex; gap:1rem; align-items:center;
+    opacity:0; transform:translateY(12px);
+    transition:opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  }
+  .cta-row.in { opacity:1; transform:none; }
+  .btn-primary {
+    font-family:var(--mono); font-size:0.55rem; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--bg); background:var(--oro); border:none; padding:0.75rem 1.8rem;
+    cursor:pointer; transition:all 0.22s;
+  }
+  .btn-primary:hover { background:#d4b870; }
+  .btn-ghost {
+    font-family:var(--mono); font-size:0.55rem; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--dim); background:none; border:1px solid var(--border); padding:0.75rem 1.8rem;
+    cursor:pointer; transition:all 0.22s;
+  }
+  .btn-ghost:hover { color:var(--text); border-color:rgba(245,241,232,0.3); }
+
+  /* ── Background ghost word ── */
+  .bg-word {
+    position:absolute; z-index:1;
+    right:-2vw; top:50%; transform:translateY(-50%);
+    font-family:var(--serif); font-weight:300;
+    font-size:clamp(16rem,30vw,32rem); line-height:1;
+    color:rgba(201,169,97,0.028); user-select:none; pointer-events:none;
+    white-space:nowrap; letter-spacing:-0.04em;
+    will-change:transform;
+  }
+
+  /* ── Decorative lines ── */
+  .deco-lines {
+    position:absolute; z-index:1; inset:0; pointer-events:none;
+  }
+  .deco-line {
+    position:absolute; left:0; right:0; height:1px;
+    background:linear-gradient(to right, transparent, rgba(201,169,97,0.07) 20%, rgba(201,169,97,0.07) 80%, transparent);
+  }
+  .deco-line:nth-child(1) { top:25%; }
+  .deco-line:nth-child(2) { top:75%; }
+
+  /* ── Gold diamond ornament ── */
+  .ornament {
+    position:absolute; z-index:2;
+    right:clamp(2rem,8vw,8rem); top:50%; transform:translateY(-50%);
+    width:2px; height:120px;
+    background:linear-gradient(to bottom, transparent, var(--oro-dim), transparent);
+    opacity:0; transition:opacity 1.2s 0.8s;
+  }
+  .ornament.in { opacity:1; }
+  .ornament::before, .ornament::after {
+    content:''; position:absolute; left:50%; transform:translateX(-50%);
+    width:8px; height:8px; border:1px solid var(--oro-dim); rotate:45deg;
+  }
+  .ornament::before { top:-4px; }
+  .ornament::after  { bottom:-4px; }
+
+  /* ── Scroll indicator ── */
+  .scroll-bar {
+    position:absolute; z-index:10;
+    bottom:0; left:0; right:0; height:2px;
+    background:rgba(245,241,232,0.05);
+  }
+  .scroll-fill {
+    height:100%; width:0%; background:var(--oro);
+    transition:width 0.1s linear;
+  }
+
+  /* ── Marquee strip ── */
+  .marquee-strip {
+    position:absolute; z-index:10;
+    bottom:2.2rem; left:0; right:0;
+    overflow:hidden;
+    mask-image:linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  }
+  .marquee-track {
+    display:flex; gap:0; white-space:nowrap;
+    animation:marquee 24s linear infinite;
+    width:max-content;
+  }
+  .marquee-track:hover { animation-play-state:paused; }
+  .marquee-item {
+    font-size:0.44rem; letter-spacing:0.22em; text-transform:uppercase;
+    color:var(--muted); padding:0 2.5rem;
+    display:inline-flex; align-items:center; gap:2.5rem;
+  }
+  .marquee-item::after {
+    content:'·'; color:var(--oro); font-size:0.6rem;
+  }
+  @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  /* ── Counter badge (top right) ── */
+  .badge-side {
+    position:absolute; z-index:10;
+    right:clamp(2rem,6vw,6rem); top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; align-items:flex-end; gap:2rem;
+    opacity:0; transition:opacity 1s 1s;
+  }
+  .badge-side.in { opacity:1; }
+  .badge-num {
+    font-family:var(--serif); font-size:clamp(3rem,5vw,4.5rem); font-weight:300;
+    color:rgba(245,241,232,0.08); line-height:1;
+  }
+  .badge-num small { font-size:0.38em; font-family:var(--mono); letter-spacing:0.15em; display:block; color:var(--muted); text-transform:uppercase; margin-top:0.3rem; }
+
+  /* ── tag bottom right ── */
+  .tag-corner { position:fixed; bottom:1.5rem; right:1.5rem; z-index:50; font-size:0.44rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--dim); border:1px solid var(--border); padding:0.28rem 0.55rem; background:rgba(10,25,41,0.8); backdrop-filter:blur(8px); }
+  .tag-corner span { color:var(--oro); }
+</style>
+</head>
+<body>
+
+<section class="hero" id="hero">
+
+  <div class="aurora">
+    <div class="ab ab-1"></div>
+    <div class="ab ab-2"></div>
+    <div class="ab ab-3"></div>
+  </div>
+
+  <!-- Decorative lines -->
+  <div class="deco-lines">
+    <div class="deco-line"></div>
+    <div class="deco-line"></div>
+  </div>
+
+  <!-- Ghost background word -->
+  <div class="bg-word" id="bgWord">ITALY</div>
+
+  <!-- Ornament -->
+  <div class="ornament" id="ornament"></div>
+
+  <!-- Side badges -->
+  <div class="badge-side" id="badgeSide">
+    <div class="badge-num">47<small>Progetti</small></div>
+    <div class="badge-num">5★<small>Rating</small></div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="logo"><span class="logo-a">Digital Evolution</span><span class="logo-b">Italy</span></div>
+    <div class="nav-links">
+      <span class="nav-link">Servizi</span>
+      <span class="nav-link">Portfolio</span>
+      <span class="nav-link">Casi studio</span>
+      <button class="nav-cta">Contattaci →</button>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <div class="content" id="content">
+
+    <p class="tag-line" id="tagLine">Agenzia Digitale · Sud Italia · Est. 2020</p>
+
+    <div class="headline">
+      <div class="hl-wrap" id="hl0"><span class="hl">La tua presenza</span></div>
+      <div class="hl-wrap" id="hl1"><span class="hl">digitale,</span></div>
+      <div class="hl-wrap" id="hl2"><span class="hl"><em>reinventata.</em></span></div>
+    </div>
+
+    <p class="sub" id="sub">
+      Siti web, strategie social e SEO per hotel, ristoranti e imprese italiane.<br>
+      Dal concept al lancio, tutto curato in ogni dettaglio.
+    </p>
+
+    <div class="cta-row" id="ctaRow">
+      <button class="btn-primary">Scopri i servizi →</button>
+      <button class="btn-ghost">Vedi il portfolio</button>
+    </div>
+
+  </div>
+
+  <!-- Scroll fill bar -->
+  <div class="scroll-bar"><div class="scroll-fill" id="scrollFill"></div></div>
+
+  <!-- Marquee -->
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <!-- doubled for seamless loop -->
+      <span class="marquee-item">Hotel</span>
+      <span class="marquee-item">Ristorante</span>
+      <span class="marquee-item">Immobiliare</span>
+      <span class="marquee-item">SPA & Wellness</span>
+      <span class="marquee-item">Tour Operator</span>
+      <span class="marquee-item">Pizzeria</span>
+      <span class="marquee-item">Bar & Lounge</span>
+      <span class="marquee-item">DMC</span>
+      <span class="marquee-item">Hotel</span>
+      <span class="marquee-item">Ristorante</span>
+      <span class="marquee-item">Immobiliare</span>
+      <span class="marquee-item">SPA & Wellness</span>
+      <span class="marquee-item">Tour Operator</span>
+      <span class="marquee-item">Pizzeria</span>
+      <span class="marquee-item">Bar & Lounge</span>
+      <span class="marquee-item">DMC</span>
+    </div>
+  </div>
+
+</section>
+
+<div class="tag-corner">Effetto: <span>Hero Section</span> · Digital Evolution Italy</div>
+
+<script>
+// ── Entrance reveals ──
+const delays = [
+  ['tagLine',  100,  el => el.classList.add('in')],
+  ['hl0',      300,  el => el.classList.add('in')],
+  ['hl1',      480,  el => el.classList.add('in')],
+  ['hl2',      650,  el => el.classList.add('in')],
+  ['sub',      820,  el => el.classList.add('in')],
+  ['ctaRow',   980,  el => el.classList.add('in')],
+  ['ornament', 1100, el => el.classList.add('in')],
+  ['badgeSide',1100, el => el.classList.add('in')],
+]
+delays.forEach(([id, ms, fn]) => setTimeout(() => fn(document.getElementById(id)), ms))
+
+// After entrance completes: remove overflow:hidden so parallax doesn't clip
+setTimeout(() => {
+  document.querySelectorAll('.hl-wrap').forEach(el => el.style.overflow = 'visible')
+}, 1600)
+
+// ── Parallax on scroll ──
+const bgWord  = document.getElementById('bgWord')
+const ornEl   = document.getElementById('ornament')
+const fillEl  = document.getElementById('scrollFill')
+
+// hero is sticky, scroll beyond 100vh moves parallax layers
+// max useful scroll: body height - window height = 130vh
+let ticking = false
+function onScroll() {
+  if (!ticking) {
+    requestAnimationFrame(updateParallax)
+    ticking = true
+  }
+}
+
+const contentEl = document.getElementById('content')
+
+function updateParallax() {
+  const scrollY = window.scrollY
+  const maxScroll = document.body.scrollHeight - window.innerHeight
+  const progress = Math.min(scrollY / maxScroll, 1)
+
+  // scroll fill bar
+  fillEl.style.width = (progress * 100) + '%'
+
+  // bg word drifts down (stays behind = depth illusion)
+  bgWord.style.transform = `translateY(calc(-50% + ${scrollY * 0.08}px))`
+
+  // content drifts up gently
+  contentEl.style.transform = `translateY(${scrollY * -0.07}px)`
+
+  // ornament follows
+  ornEl.style.transform = `translateY(calc(-50% + ${scrollY * -0.05}px))`
+
+  ticking = false
+}
+
+window.addEventListener('scroll', onScroll, { passive:true })
+
+// ── Custom lerped cursor ──
+const cur = document.createElement('div')
+cur.style.cssText = 'position:fixed;z-index:9999;pointer-events:none;top:0;left:0;'
+const ring = document.createElement('div')
+ring.style.cssText = `
+  width:28px;height:28px;border:1px solid rgba(201,169,97,0.5);border-radius:50%;
+  margin:-14px 0 0 -14px;transition:transform 0.1s;
+`
+const dot = document.createElement('div')
+dot.style.cssText = `
+  position:absolute;top:50%;left:50%;
+  width:4px;height:4px;background:var(--oro);border-radius:50%;
+  margin:-2px 0 0 -2px;
+`
+cur.appendChild(ring)
+cur.appendChild(dot)
+document.body.appendChild(cur)
+
+let mx=0,my=0,rx=0,ry=0
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY })
+
+;(function lerp() {
+  rx += (mx-rx)*0.12; ry += (my-ry)*0.12
+  cur.style.transform = `translate(${rx}px,${ry}px)`
+  requestAnimationFrame(lerp)
+})()
+</script>
+</body>
+</html>

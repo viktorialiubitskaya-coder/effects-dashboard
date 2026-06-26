@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Loop Spiral · Digital Evolution Italy</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --oro:#c9a961;--oro-dim:rgba(201,169,97,0.4);
+    --text:#f5f1e8;--dim:rgba(245,241,232,0.5);--muted:rgba(245,241,232,0.22);
+    --serif:Georgia,'Times New Roman',serif;--mono:'Courier New',monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  html,body{height:100%;background:#050505;overflow:hidden;font-family:var(--mono);color:var(--text)}
+  #stage{position:fixed;inset:0;z-index:0;
+    perspective:1200px;perspective-origin:50% 50%;
+    cursor:grab;touch-action:none}
+  #stage.drag{cursor:grabbing}
+  #spiral{position:absolute;top:50%;left:50%;
+    transform-style:preserve-3d;will-change:transform}
+  .card{position:absolute;top:0;left:0;
+    width:200px;height:268px;margin:-134px 0 0 -100px;
+    border-radius:8px;overflow:hidden;
+    transform-style:preserve-3d;will-change:transform,opacity;
+    box-shadow:0 24px 60px rgba(0,0,0,.6);
+    background:#111}
+  .card img{width:100%;height:100%;object-fit:cover;display:block;
+    filter:saturate(1.05) contrast(1.02)}
+  .card::after{content:'';position:absolute;inset:0;
+    background:linear-gradient(140deg,rgba(255,255,255,.14),transparent 40%),
+               linear-gradient(0deg,rgba(0,0,0,.45),transparent 55%)}
+  .card .num{position:absolute;bottom:.55rem;left:.6rem;z-index:2;
+    font-size:.5rem;letter-spacing:.18em;color:var(--text);opacity:.8}
+  @media(max-width:640px){.card{width:150px;height:200px;margin:-100px 0 0 -75px}}
+
+  .vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 32%,rgba(5,5,5,.72) 100%)}
+  .floating{position:fixed;z-index:10;top:50%;left:50%;
+    transform:translate(-50%,-50%);text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:.9rem;
+    pointer-events:none;will-change:transform;mix-blend-mode:difference}
+  .f-pre{font-size:.5rem;letter-spacing:.42em;text-transform:uppercase;color:#fff;
+    opacity:0;animation:fu .8s .3s var(--ease) forwards}
+  .f-title{font-family:var(--serif);font-weight:300;font-size:clamp(2.6rem,6.5vw,5.2rem);
+    line-height:.95;color:#fff;opacity:0;animation:fu .9s .45s var(--ease) forwards}
+  .f-title em{font-style:italic;color:var(--oro)}
+  .f-line{width:38px;height:1px;background:rgba(255,255,255,.6);
+    opacity:0;animation:fu .7s .65s var(--ease) forwards}
+  @keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .nav{position:fixed;top:0;left:0;right:0;z-index:20;padding:1.3rem 2rem;
+    display:flex;justify-content:space-between;
+    background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);pointer-events:none}
+  .logo-a{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase}
+  .logo-b{font-size:.46rem;letter-spacing:.28em;text-transform:uppercase;color:var(--oro)}
+  .hint{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:20;
+    font-size:.46rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    animation:pulse 3s ease-in-out infinite;pointer-events:none}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:.85}}
+  .tag{position:fixed;bottom:1.5rem;right:1.5rem;z-index:50;font-size:.44rem;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+    border:1px solid rgba(201,169,97,.18);padding:.28rem .55rem;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="stage"><div id="spiral"></div></div>
+<div class="vignette"></div>
+
+<div class="nav">
+  <div class="logo-a">Digital Evolution</div>
+  <div class="logo-b">Loop Spiral</div>
+</div>
+
+<div class="floating">
+  <div class="f-pre">HTML · CSS · JS</div>
+  <h1 class="f-title"><em>Loop</em> Spiral</h1>
+  <div class="f-line"></div>
+</div>
+
+<div class="hint">Scrolla o trascina — la spirale gira all'infinito</div>
+<div class="tag">Effetto · 3D Loop</div>
+
+<script>
+const COUNT = 20;                                  // numero card (= immagini dmc)
+const TURNS = 2.2;                                 // giri di elica visibili
+const RADIUS = Math.min(window.innerWidth, 900) < 700 ? 200 : 320;
+const SPAN_Y = 1500;                               // estensione verticale dell'elica
+const TAU = Math.PI * 2;
+
+const spiralEl = document.getElementById('spiral');
+const stageEl  = document.getElementById('stage');
+
+// build cards
+const cards = [];
+for (let i = 0; i < COUNT; i++){
+  const el = document.createElement('div');
+  el.className = 'card';
+  const n = i + 1;
+  el.innerHTML = `<img src="img/dmc/dmc-${n}.jpg" alt="" loading="eager"/>`
+               + `<span class="num">${String(n).padStart(2,'0')} / ${COUNT}</span>`;
+  spiralEl.appendChild(el);
+  cards.push(el);
+}
+
+// ── stato moto ──
+let progress = 0;          // avanzamento lungo l'elica (unità = 1 card)
+let velocity = 0;          // inerzia
+let autoplay = 0.012;      // deriva costante (loop infinito)
+let idle = 0;              // frame dall'ultima interazione
+
+function frac(x){ return x - Math.floor(x); }      // mod 1 sempre positivo
+
+function render(){
+  for (let i = 0; i < COUNT; i++){
+    // posizione normalizzata nell'elica, ricicla → loop infinito
+    const np = frac((i - progress) / COUNT);        // 0..1
+    const angle = np * TURNS * TAU;
+    const y = (np - 0.5) * SPAN_Y;
+    const x = Math.sin(angle) * RADIUS;
+    const z = Math.cos(angle) * RADIUS;
+
+    // profondità → scala + opacità (fronte = z positivo)
+    const depth = (z + RADIUS) / (2 * RADIUS);       // 0 retro .. 1 fronte
+    const scale = 0.55 + depth * 0.65;
+    const opacity = 0.12 + depth * 0.95;
+
+    const el = cards[i];
+    el.style.transform =
+      `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px) `
+      + `rotateY(${(-angle * 180/Math.PI).toFixed(1)}deg) `
+      + `scale(${scale.toFixed(3)})`;
+    el.style.opacity = Math.min(opacity, 1).toFixed(3);
+    el.style.zIndex = Math.round(depth * 100);
+  }
+}
+
+function loop(){
+  requestAnimationFrame(loop);
+  idle++;
+  // inerzia + autoplay (autoplay riprende dopo ~90 frame di calma)
+  progress += velocity;
+  velocity *= 0.92;
+  if (idle > 90) progress += autoplay;
+  render();
+}
+loop();
+
+// ── input: wheel ──
+stageEl.addEventListener('wheel', e=>{
+  e.preventDefault();
+  velocity += e.deltaY * 0.0012;
+  velocity = Math.max(-0.5, Math.min(0.5, velocity));
+  idle = 0;
+}, {passive:false});
+
+// ── input: drag verticale ──
+let dragging=false, lastY=0;
+function down(y){ dragging=true; lastY=y; idle=0; stageEl.classList.add('drag'); }
+function move(y){ if(!dragging) return; velocity += (lastY - y) * 0.0016; lastY=y; idle=0; }
+function up(){ dragging=false; stageEl.classList.remove('drag'); }
+
+stageEl.addEventListener('pointerdown', e=>down(e.clientY));
+window.addEventListener('pointermove',  e=>move(e.clientY));
+window.addEventListener('pointerup', up);
+stageEl.addEventListener('touchstart', e=>{ if(e.touches[0]) down(e.touches[0].clientY); }, {passive:true});
+window.addEventListener('touchmove',  e=>{ if(e.touches[0]) move(e.touches[0].clientY); }, {passive:true});
+window.addEventListener('touchend', up);
+
+window.addEventListener('resize', render);
+</script>
+</body>
+</html>

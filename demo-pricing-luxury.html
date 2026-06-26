@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pricing Luxury · Digital Evolution Italy</title>
+<style>
+  @property --angle { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --bg:#050d18; --surface:#0a1929; --border:rgba(201,169,97,0.14);
+    --oro:#c9a961; --oro-dim:rgba(201,169,97,0.4);
+    --text:#f5f1e8; --dim:rgba(245,241,232,0.45); --muted:rgba(245,241,232,0.22);
+    --serif:Georgia,'Times New Roman',serif; --mono:'Courier New',monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+
+  html,body { min-height:100%; background:var(--bg); color:var(--text); font-family:var(--mono); }
+
+  body {
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,169,97,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 50% 110%, rgba(13,60,120,0.2) 0%, transparent 60%);
+    background-attachment:fixed;
+  }
+
+  /* dot grid */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:radial-gradient(circle, rgba(201,169,97,0.06) 1px, transparent 1px);
+    background-size:36px 36px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .page { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem 2rem; gap:3rem; }
+
+  /* Header */
+  .header { text-align:center; }
+  .header-pre { font-size:0.5rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--oro); margin-bottom:1rem; }
+  .header-title { font-family:var(--serif); font-size:clamp(2rem,5vw,3.5rem); font-weight:300; color:var(--text); line-height:1; margin-bottom:1rem; }
+  .header-sub { font-size:0.6rem; letter-spacing:0.14em; color:var(--dim); }
+
+  /* Season Toggle */
+  .season-wrap { display:flex; align-items:center; gap:1rem; }
+  .season-lbl {
+    font-size:0.55rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--dim);
+    transition:color 0.3s; cursor:pointer; user-select:none;
+  }
+  .season-lbl.active { color:var(--oro); }
+
+  .toggle-btn {
+    position:relative; width:52px; height:28px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; cursor:pointer; transition:border-color 0.3s;
+    flex-shrink:0;
+  }
+  .toggle-btn:hover { border-color:var(--oro-dim); }
+  .toggle-btn.on { border-color:var(--oro); }
+  .toggle-knob {
+    position:absolute; top:4px; left:4px;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--oro); transition:transform 0.35s var(--ease);
+  }
+  .toggle-btn.on .toggle-knob { transform:translateX(24px); }
+
+  .season-badge {
+    font-size:0.45rem; letter-spacing:0.15em; text-transform:uppercase;
+    padding:0.2rem 0.5rem; border:1px solid;
+    transition:all 0.3s;
+  }
+  .season-badge.low  { color:rgba(100,160,220,0.8); border-color:rgba(100,160,220,0.2); }
+  .season-badge.high { color:#e8a030; border-color:rgba(232,160,48,0.3); }
+
+  /* Grid */
+  .pricing-grid {
+    display:grid;
+    grid-template-columns:1fr 1.06fr 1fr;
+    gap:1px;
+    background:var(--border);
+    border:1px solid var(--border);
+    max-width:1000px; width:100%;
+    opacity:0;
+    transform:translateY(40px);
+    transition:opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  }
+  .pricing-grid.visible { opacity:1; transform:translateY(0); }
+
+  /* Card */
+  .pricing-card {
+    background:var(--bg);
+    padding:2.5rem 2rem;
+    display:flex; flex-direction:column; gap:0;
+    position:relative; overflow:hidden;
+    transition:background 0.3s, transform 0.4s var(--ease), box-shadow 0.4s;
+    cursor:default;
+  }
+  .pricing-card:hover {
+    background:var(--surface);
+    transform:translateY(-6px) scale(1.01);
+    box-shadow:0 20px 60px rgba(5,13,24,0.8), 0 0 40px rgba(201,169,97,0.08);
+    z-index:2;
+  }
+  .pricing-card.featured {
+    background:var(--surface);
+    animation:pulse-glow 3.5s ease infinite;
+  }
+  .pricing-card.featured:hover {
+    transform:translateY(-8px) scale(1.01);
+    box-shadow:0 24px 80px rgba(5,13,24,0.9), 0 0 60px rgba(201,169,97,0.18);
+  }
+
+  @keyframes pulse-glow {
+    0%,100% { box-shadow:0 0 30px rgba(201,169,97,0.1), 0 0 60px rgba(201,169,97,0.05); }
+    50%      { box-shadow:0 0 50px rgba(201,169,97,0.18), 0 0 100px rgba(201,169,97,0.08); }
+  }
+
+  /* animated top border on featured */
+  .pricing-card.featured::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, transparent, var(--oro) 40%, var(--oro-dim) 60%, transparent);
+    animation:sweep 2.5s ease infinite;
+  }
+  @keyframes sweep {
+    0%   { opacity:0.4; transform:scaleX(0.3) translateX(-80%); }
+    50%  { opacity:1;   transform:scaleX(1)   translateX(0); }
+    100% { opacity:0.4; transform:scaleX(0.3) translateX(80%); }
+  }
+
+  /* Popular badge */
+  .popular-badge {
+    position:absolute; top:1.2rem; right:1.2rem;
+    font-size:0.42rem; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--bg); background:var(--oro);
+    padding:0.22rem 0.55rem;
+  }
+
+  /* Card contents */
+  .card-tier {
+    font-size:0.5rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--oro);
+    margin-bottom:1.5rem;
+  }
+  .card-price-wrap { margin-bottom:0.5rem; display:flex; align-items:baseline; gap:0.3rem; }
+  .card-currency { font-size:1.1rem; color:var(--dim); font-family:var(--serif); line-height:1; align-self:flex-start; margin-top:0.5rem; }
+  .card-price {
+    font-family:var(--serif); font-size:clamp(2.8rem,5vw,3.8rem);
+    font-weight:300; color:var(--text); line-height:1;
+    transition:transform 0.3s var(--ease);
+  }
+  .pricing-card:hover .card-price { transform:scale(1.03); }
+  .card-period { font-size:0.5rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); margin-bottom:2rem; }
+
+  .divider { height:1px; background:var(--border); margin-bottom:1.75rem; }
+
+  /* Features */
+  .features { display:flex; flex-direction:column; gap:0.65rem; margin-bottom:2rem; flex:1; }
+  .feat {
+    display:flex; align-items:center; gap:0.6rem;
+    font-size:0.6rem; letter-spacing:0.06em; color:var(--dim);
+    transition:color 0.2s;
+  }
+  .feat.yes { color:rgba(245,241,232,0.75); }
+  .feat:hover { color:var(--text); }
+  .feat-icon { width:14px; height:14px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.5rem; flex-shrink:0; }
+  .feat.yes  .feat-icon { background:rgba(201,169,97,0.15); color:var(--oro); }
+  .feat.no   .feat-icon { background:rgba(245,241,232,0.05); color:var(--muted); }
+
+  /* CTA */
+  .cta-btn {
+    display:block; width:100%; padding:0.75rem 1rem;
+    font-family:var(--mono); font-size:0.58rem; letter-spacing:0.18em; text-transform:uppercase;
+    border:1px solid var(--border); background:none; color:var(--dim);
+    cursor:pointer; transition:all 0.25s; text-align:center; text-decoration:none;
+  }
+  .cta-btn:hover { border-color:var(--oro-dim); color:var(--text); background:rgba(201,169,97,0.05); }
+  .pricing-card.featured .cta-btn {
+    border-color:rgba(201,169,97,0.45); color:var(--oro);
+  }
+  .pricing-card.featured .cta-btn:hover {
+    background:rgba(201,169,97,0.1); border-color:var(--oro);
+  }
+
+  /* Stagger entrance */
+  .pricing-card { opacity:0; transform:translateY(30px); }
+  .pricing-card.enter { transition:opacity 0.6s var(--ease), transform 0.6s var(--ease), background 0.3s, box-shadow 0.4s; opacity:1; transform:translateY(0); }
+  .pricing-card.featured.enter { /* no scale here, set in grid */ }
+
+  /* Note */
+  .note { font-size:0.5rem; letter-spacing:0.12em; color:var(--muted); text-align:center; }
+  .note span { color:var(--dim); }
+
+  /* Nav */
+  .nav { position:fixed; top:0; left:0; right:0; z-index:50; padding:1.25rem 2.5rem; display:flex; align-items:center; justify-content:space-between; background:linear-gradient(to bottom,rgba(5,13,24,0.85),transparent); pointer-events:none; }
+  .logo { display:flex; flex-direction:column; line-height:1.25; }
+  .logo-a { font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text); }
+  .logo-b { font-size:0.46rem; letter-spacing:0.26em; text-transform:uppercase; color:var(--oro); }
+
+  .tag { position:fixed; bottom:1.5rem; right:1.5rem; z-index:50; font-family:var(--mono); font-size:0.44rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--dim); border:1px solid var(--border); padding:0.28rem 0.55rem; background:rgba(10,25,41,0.8); backdrop-filter:blur(8px); }
+  .tag span { color:var(--oro); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo">
+    <span class="logo-a">Digital Evolution</span>
+    <span class="logo-b">Italy · Pricing</span>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="header">
+    <p class="header-pre">Scegli la tua esperienza</p>
+    <h1 class="header-title">Il tuo soggiorno,<br>su misura.</h1>
+    <p class="header-sub">Prezzi per camera · settimana · tasse incluse</p>
+  </div>
+
+  <!-- Season Toggle -->
+  <div class="season-wrap">
+    <span class="season-lbl active" id="lbl-low" onclick="setSeason(false)">Bassa Stagione</span>
+    <button class="toggle-btn" id="toggle-btn" onclick="toggleSeason()">
+      <span class="toggle-knob"></span>
+    </button>
+    <span class="season-lbl" id="lbl-high" onclick="setSeason(true)">Alta Stagione</span>
+    <span class="season-badge low" id="season-badge">Nov – Apr</span>
+  </div>
+
+  <!-- Pricing Grid -->
+  <div class="pricing-grid" id="grid">
+
+    <!-- Classic -->
+    <div class="pricing-card" data-tier="0">
+      <p class="card-tier">Classic</p>
+      <div class="card-price-wrap">
+        <span class="card-currency">€</span>
+        <span class="card-price" id="price-0">890</span>
+      </div>
+      <p class="card-period">/ settimana · per camera</p>
+      <div class="divider"></div>
+      <div class="features">
+        <div class="feat yes"><span class="feat-icon">✓</span>Camera vista giardino</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Colazione inclusa</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Accesso piscina</div>
+        <div class="feat no" ><span class="feat-icon">—</span>Accesso spa</div>
+        <div class="feat no" ><span class="feat-icon">—</span>Transfer privato</div>
+        <div class="feat no" ><span class="feat-icon">—</span>Butler dedicato</div>
+      </div>
+      <a class="cta-btn" href="#">Prenota ora →</a>
+    </div>
+
+    <!-- Deluxe (featured) -->
+    <div class="pricing-card featured" data-tier="1">
+      <span class="popular-badge">Più scelto</span>
+      <p class="card-tier">Deluxe</p>
+      <div class="card-price-wrap">
+        <span class="card-currency">€</span>
+        <span class="card-price" id="price-1">1.590</span>
+      </div>
+      <p class="card-period">/ settimana · per camera</p>
+      <div class="divider"></div>
+      <div class="features">
+        <div class="feat yes"><span class="feat-icon">✓</span>Camera vista mare</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Colazione inclusa</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Accesso piscina</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Accesso spa</div>
+        <div class="feat no" ><span class="feat-icon">—</span>Transfer privato</div>
+        <div class="feat no" ><span class="feat-icon">—</span>Butler dedicato</div>
+      </div>
+      <a class="cta-btn" href="#">Prenota ora →</a>
+    </div>
+
+    <!-- Suite Esclusiva -->
+    <div class="pricing-card" data-tier="2">
+      <p class="card-tier">Suite Esclusiva</p>
+      <div class="card-price-wrap">
+        <span class="card-currency">€</span>
+        <span class="card-price" id="price-2">2.890</span>
+      </div>
+      <p class="card-period">/ settimana · per camera</p>
+      <div class="divider"></div>
+      <div class="features">
+        <div class="feat yes"><span class="feat-icon">✓</span>Suite panoramica</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Colazione & cena</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Accesso piscina</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Spa illimitata</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Transfer privato</div>
+        <div class="feat yes"><span class="feat-icon">✓</span>Butler dedicato</div>
+      </div>
+      <a class="cta-btn" href="#">Prenota ora →</a>
+    </div>
+
+  </div>
+
+  <p class="note">Disponibilità limitata · <span>Cancellazione gratuita entro 7 giorni</span></p>
+
+</div>
+
+<div class="tag">Effetto: <span>Pricing Table Luxury</span> · Digital Evolution Italy</div>
+
+<script>
+const PRICES = {
+  low:  [890,  1590, 2890],
+  high: [1190, 2190, 3890],
+}
+const SEASONS = {
+  low:  { label:'Nov – Apr', badge:'low' },
+  high: { label:'Mag – Ott', badge:'high' },
+}
+
+let isHigh = false
+const priceEls = [0,1,2].map(i => document.getElementById(`price-${i}`))
+const toggleBtn = document.getElementById('toggle-btn')
+const lblLow    = document.getElementById('lbl-low')
+const lblHigh   = document.getElementById('lbl-high')
+const seasonBadge = document.getElementById('season-badge')
+
+function formatPrice(n) {
+  return n >= 1000 ? Math.floor(n/1000) + '.' + String(n%1000).padStart(3,'0') : String(n)
+}
+
+function animatePrice(el, from, to, duration=600) {
+  const start = performance.now()
+  const ease = t => t<0.5 ? 2*t*t : -1+(4-2*t)*t
+  ;(function update(now) {
+    const p = Math.min((now-start)/duration, 1)
+    el.textContent = formatPrice(Math.round(from + (to-from)*ease(p)))
+    if(p<1) requestAnimationFrame(update)
+  })(start)
+}
+
+function setSeason(high) {
+  isHigh = high
+  toggleBtn.classList.toggle('on', high)
+  lblLow.classList.toggle('active', !high)
+  lblHigh.classList.toggle('active', high)
+  const s = high ? SEASONS.high : SEASONS.low
+  seasonBadge.textContent = s.label
+  seasonBadge.className = 'season-badge ' + s.badge
+
+  const prices = high ? PRICES.high : PRICES.low
+  priceEls.forEach((el, i) => {
+    const from = +el.textContent.replace('.','')
+    animatePrice(el, from, prices[i])
+  })
+}
+
+function toggleSeason() { setSeason(!isHigh) }
+
+// Entrance animation
+setTimeout(() => {
+  document.getElementById('grid').classList.add('visible')
+  document.querySelectorAll('.pricing-card').forEach((card, i) => {
+    setTimeout(() => {
+      card.classList.add('enter')
+      // count up prices from 0 on entrance
+      const price = isHigh ? PRICES.high[i] : PRICES.low[i]
+      animatePrice(priceEls[i], 0, price, 800)
+    }, i * 100)
+  })
+}, 200)
+</script>
+</body>
+</html>

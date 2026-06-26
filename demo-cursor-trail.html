@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Cursor Trail · Digital Evolution Italy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#000;cursor:none}
+canvas{position:fixed;inset:0;z-index:0}
+
+.ui{position:fixed;inset:0;z-index:10;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem}
+
+.ui-pre{font-family:'Courier New',monospace;font-size:.46rem;letter-spacing:.35em;
+  text-transform:uppercase;color:rgba(255,255,255,.35)}
+.ui-title{font-family:Georgia,serif;font-weight:300;
+  font-size:clamp(2.5rem,6vw,5rem);line-height:.95;
+  color:#fff;text-align:center;
+  text-shadow:0 0 60px rgba(255,255,255,.12);
+  opacity:0;animation:fu .9s .4s cubic-bezier(0.16,1,0.3,1) forwards}
+.ui-title em{font-style:italic;
+  background:linear-gradient(90deg,#ff6ec7,#a78bfa,#38bdf8,#4ade80,#fbbf24);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ui-line{width:36px;height:1px;background:rgba(255,255,255,.2);
+  opacity:0;animation:fu .7s .6s forwards}
+.ui-hint{font-family:'Courier New',monospace;font-size:.48rem;letter-spacing:.18em;
+  text-transform:uppercase;color:rgba(255,255,255,.3);
+  opacity:0;animation:fu .7s .75s forwards;
+  animation-name:pulse2}
+@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes pulse2{
+  0%{opacity:0;transform:translateY(10px)}
+  30%{opacity:.5}
+  50%{opacity:.3}
+  70%{opacity:.5}
+  100%{opacity:.3;transform:none}
+}
+
+.nav{position:fixed;top:0;left:0;right:0;z-index:20;pointer-events:none;
+  padding:1.2rem 2rem;display:flex;justify-content:space-between;
+  background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent)}
+.logo-a{font-family:'Courier New',monospace;font-size:.58rem;letter-spacing:.22em;
+  text-transform:uppercase;color:#fff}
+.logo-b{font-family:'Courier New',monospace;font-size:.44rem;letter-spacing:.28em;
+  text-transform:uppercase;color:rgba(255,255,255,.4)}
+
+.tag{position:fixed;bottom:1.5rem;right:1.5rem;z-index:20;font-size:.44rem;
+  font-family:'Courier New',monospace;
+  letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.35);
+  border:1px solid rgba(255,255,255,.1);padding:.28rem .55rem;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(8px)}
+.tag span{color:#a78bfa}
+
+/* custom cursor dot */
+#dot{
+  position:fixed;z-index:100;pointer-events:none;
+  width:10px;height:10px;border-radius:50%;
+  background:#fff;transform:translate(-50%,-50%);
+  box-shadow:0 0 12px 4px rgba(255,255,255,.6);
+  transition:transform .08s;
+}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="dot"></div>
+
+<nav class="nav">
+  <div><p class="logo-a">Digital Evolution</p><p class="logo-b">Italy · Cursor Trail</p></div>
+</nav>
+
+<div class="ui">
+  <p class="ui-pre">Muovi il mouse</p>
+  <h1 class="ui-title">Dipingi<br>il tuo <em>sito web.</em></h1>
+  <div class="ui-line"></div>
+  <p class="ui-hint">Muovi il cursore per creare</p>
+</div>
+
+<div class="tag">Effetto: <span>Cursor Trail</span> · Digital Evolution Italy</div>
+
+<script>
+const canvas = document.getElementById('c')
+const ctx    = canvas.getContext('2d')
+const dot    = document.getElementById('dot')
+
+let W, H
+function resize() {
+  W = canvas.width  = window.innerWidth
+  H = canvas.height = window.innerHeight
+}
+resize()
+window.addEventListener('resize', resize)
+
+// ── Particle ─────────────────────────────────────────────
+class Particle {
+  constructor(x, y, hue) {
+    this.x   = x
+    this.y   = y
+    this.hue = hue
+    // random burst direction
+    const angle = Math.random() * Math.PI * 2
+    const speed = Math.random() * 2.8 + 0.4
+    this.vx = Math.cos(angle) * speed
+    this.vy = Math.sin(angle) * speed
+    this.size  = Math.random() * 3.5 + 1.2
+    this.alpha = Math.random() * 0.7 + 0.3
+    this.decay = Math.random() * 0.018 + 0.008
+    this.sat   = 80 + Math.random() * 20
+    this.lit   = 55 + Math.random() * 20
+    // gravity + drag
+    this.gravity = (Math.random() - 0.5) * 0.06
+  }
+  update() {
+    this.x     += this.vx
+    this.y     += this.vy
+    this.vx    *= 0.97
+    this.vy    *= 0.97
+    this.vy    += this.gravity
+    this.alpha -= this.decay
+    this.size  *= 0.993
+  }
+  draw() {
+    ctx.save()
+    ctx.globalAlpha = Math.max(0, this.alpha)
+    ctx.fillStyle   = `hsl(${this.hue},${this.sat}%,${this.lit}%)`
+    ctx.shadowColor = `hsl(${this.hue},100%,70%)`
+    ctx.shadowBlur  = 8
+    ctx.beginPath()
+    ctx.arc(this.x, this.y, Math.max(0, this.size), 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+  dead() { return this.alpha <= 0 || this.size <= 0.3 }
+}
+
+// ── State ─────────────────────────────────────────────────
+let particles = []
+let hue = 0
+let mx = W/2, my = H/2
+let pmx = mx, pmy = my
+let frameCount = 0
+
+// ── Input ─────────────────────────────────────────────────
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY
+  dot.style.left = mx + 'px'
+  dot.style.top  = my + 'px'
+})
+
+document.addEventListener('touchmove', e => {
+  e.preventDefault()
+  mx = e.touches[0].clientX; my = e.touches[0].clientY
+  dot.style.left = mx + 'px'
+  dot.style.top  = my + 'px'
+}, {passive:false})
+
+// ── Loop ──────────────────────────────────────────────────
+function loop() {
+  requestAnimationFrame(loop)
+  frameCount++
+
+  // fade trail (partial clear for glow smear)
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'
+  ctx.fillRect(0, 0, W, H)
+
+  // spawn particles on movement
+  const spd = Math.hypot(mx - pmx, my - pmy)
+  const count = Math.min(Math.ceil(spd * 1.4), 22)
+  for (let i = 0; i < count; i++) {
+    // interpolate spawn position along movement
+    const t = i / Math.max(count, 1)
+    const sx = pmx + (mx - pmx) * t
+    const sy = pmy + (my - pmy) * t
+    particles.push(new Particle(sx, sy, hue))
+  }
+
+  // also spawn ambient sparkles at cursor every few frames
+  if (frameCount % 2 === 0 && spd < 1) {
+    particles.push(new Particle(mx + (Math.random()-0.5)*4, my + (Math.random()-0.5)*4, hue))
+  }
+
+  // cycle hue
+  hue = (hue + 1.8) % 360
+
+  // update + draw
+  particles = particles.filter(p => {
+    p.update()
+    p.draw()
+    return !p.dead()
+  })
+
+  pmx = mx; pmy = my
+}
+
+loop()
+</script>
+</body>
+</html>

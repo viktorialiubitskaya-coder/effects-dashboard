@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Restyling Siti Web · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root { --bg:#050d18; --oro:#c9a961; --text:#f5f1e8; --dim:rgba(245,241,232,0.45); --serif:Georgia,serif; --mono:'Courier New',monospace; --ease:cubic-bezier(0.16,1,0.3,1); }
+  html, body { height:100%; background:var(--bg); overflow:hidden; }
+  .stage { position:relative; width:100vw; height:100vh; overflow:hidden; cursor:ew-resize; user-select:none; -webkit-user-select:none; }
+  .pair { position:absolute; inset:0; opacity:0; transition:opacity 0.55s ease; pointer-events:none; }
+  .pair.is-active { opacity:1; pointer-events:auto; }
+  .img-before, .img-after { position:absolute; inset:0; background-size:cover; background-position:center; will-change:clip-path; }
+  .img-before { filter:grayscale(0.3) brightness(0.85) sepia(0.1); }
+  .divider { position:absolute; top:0; bottom:0; left:50%; width:2px; background:linear-gradient(to bottom,transparent,var(--oro) 10%,var(--oro) 90%,transparent); z-index:10; pointer-events:none; will-change:left; }
+  .handle { position:absolute; top:50%; left:0; transform:translate(-50%,-50%); width:52px; height:52px; border-radius:50%; border:1.5px solid var(--oro); background:rgba(5,13,24,0.88); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; gap:5px; z-index:11; cursor:ew-resize; transition:transform 0.2s var(--ease),box-shadow 0.2s; box-shadow:0 0 0 0 rgba(201,169,97,0); }
+  .stage.dragging .handle { transform:translate(-50%,-50%) scale(1.12); box-shadow:0 0 0 6px rgba(201,169,97,0.12); }
+  .h-arr { color:var(--oro); font-size:0.65rem; }
+  .lbl { position:absolute; top:5.5rem; z-index:15; font-family:var(--mono); font-size:0.48rem; letter-spacing:0.28em; text-transform:uppercase; padding:0.28rem 0.6rem; border:1px solid; backdrop-filter:blur(6px); pointer-events:none; transition:opacity 0.3s; }
+  .lbl-b { left:2rem; color:var(--dim); border-color:rgba(245,241,232,0.12); background:rgba(5,13,24,0.6); }
+  .lbl-a { right:2rem; color:var(--oro); border-color:rgba(201,169,97,0.28); background:rgba(5,13,24,0.6); }
+  .edge-l,.edge-r { position:absolute; top:0; bottom:0; width:100px; z-index:8; pointer-events:none; }
+  .edge-l { left:0; background:linear-gradient(to right,rgba(5,13,24,0.45),transparent); }
+  .edge-r { right:0; background:linear-gradient(to left,rgba(5,13,24,0.45),transparent); }
+
+  .top-bar { position:absolute; top:0; left:0; right:0; z-index:20; padding:1.75rem 2.5rem 4rem; background:linear-gradient(to bottom,rgba(5,13,24,0.85),transparent); display:grid; grid-template-columns:1fr auto 1fr; align-items:start; pointer-events:none; }
+  .logo { display:flex; flex-direction:column; line-height:1.25; }
+  .logo-a { font-size:0.62rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text); font-family:var(--mono); }
+  .logo-b { font-size:0.46rem; letter-spacing:0.26em; text-transform:uppercase; color:var(--oro); font-family:var(--mono); }
+  .pair-title { font-family:var(--serif); font-size:clamp(1.4rem,3vw,2rem); font-weight:300; color:var(--text); text-align:center; transition:opacity 0.3s,transform 0.4s var(--ease); }
+  .pair-title.sw { opacity:0; transform:translateY(8px); }
+  .pair-result { font-family:var(--mono); font-size:0.52rem; letter-spacing:0.1em; color:var(--dim); text-align:center; margin-top:0.4rem; transition:opacity 0.3s,transform 0.4s var(--ease); white-space:nowrap; }
+  .pair-result .h { color:var(--oro); }
+  .pair-result.sw { opacity:0; transform:translateY(8px); }
+  .pair-counter { font-family:var(--mono); font-size:0.5rem; letter-spacing:0.18em; color:var(--dim); text-align:right; }
+
+  /* stats panel — after side */
+  .stats-panel {
+    position:absolute; top:50%; right:3rem; transform:translateY(-50%);
+    z-index:15; display:flex; flex-direction:column; gap:0.75rem;
+    pointer-events:none; transition:opacity 0.5s;
+  }
+  .stat-item { display:flex; flex-direction:column; gap:0.15rem; text-align:right; }
+  .stat-val { font-family:var(--serif); font-size:2rem; font-weight:300; color:var(--oro); line-height:1; }
+  .stat-lbl { font-family:var(--mono); font-size:0.44rem; letter-spacing:0.18em; text-transform:uppercase; color:rgba(245,241,232,0.5); }
+
+  .bottom-bar { position:absolute; bottom:0; left:0; right:0; z-index:20; padding:4rem 2.5rem 2.25rem; background:linear-gradient(to top,rgba(5,13,24,0.92),rgba(5,13,24,0.5) 50%,transparent); display:flex; align-items:flex-end; justify-content:space-between; pointer-events:none; }
+  .tabs { display:flex; gap:2px; pointer-events:auto; }
+  .tab { display:flex; align-items:center; gap:0.45rem; padding:0.42rem 0.9rem; font-family:var(--mono); font-size:0.5rem; letter-spacing:0.14em; text-transform:uppercase; background:rgba(5,13,24,0.7); border:1px solid rgba(245,241,232,0.1); color:var(--dim); cursor:pointer; transition:all 0.25s; backdrop-filter:blur(8px); }
+  .tab:hover { color:var(--text); border-color:rgba(245,241,232,0.22); }
+  .tab.is-active { color:var(--oro); border-color:rgba(201,169,97,0.4); }
+  .tab-dot { width:4px; height:4px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .hint { font-family:var(--mono); font-size:0.46rem; letter-spacing:0.18em; text-transform:uppercase; color:rgba(245,241,232,0.25); }
+  .tag { position:absolute; top:1.75rem; right:2.5rem; z-index:25; font-family:var(--mono); font-size:0.44rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--dim); border:1px solid rgba(201,169,97,0.15); padding:0.28rem 0.55rem; background:rgba(10,25,41,0.7); backdrop-filter:blur(8px); pointer-events:none; }
+  .tag span { color:var(--oro); }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <div class="pair is-active" id="pair-0">
+    <div class="img-before" style="background-image:url(img/siti/siti-hotel-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/siti/siti-hotel-after.jpg)"></div>
+  </div>
+  <div class="pair" id="pair-1">
+    <div class="img-before" style="background-image:url(img/siti/siti-rest-before.jpg)"></div>
+    <div class="img-after"  style="background-image:url(img/siti/siti-rest-after.jpg)"></div>
+  </div>
+
+  <div class="divider" id="divider">
+    <div class="handle"><span class="h-arr">←</span><span class="h-arr">→</span></div>
+  </div>
+
+  <div class="lbl lbl-b" id="lbl-b">Vecchio Sito</div>
+  <div class="lbl lbl-a" id="lbl-a">Nuovo Sito</div>
+  <div class="edge-l"></div><div class="edge-r"></div>
+
+  <!-- Stats (visible on right/after side) -->
+  <div class="stats-panel" id="stats-0">
+    <div class="stat-item"><span class="stat-val">+850%</span><span class="stat-lbl">Traffico organico</span></div>
+    <div class="stat-item"><span class="stat-val">#1</span><span class="stat-lbl">Posizione Google Maps</span></div>
+    <div class="stat-item"><span class="stat-val">+3x</span><span class="stat-lbl">Prenotazioni dirette</span></div>
+  </div>
+  <div class="stats-panel" id="stats-1" style="opacity:0;pointer-events:none">
+    <div class="stat-item"><span class="stat-val">+240%</span><span class="stat-lbl">Coperti prenotati online</span></div>
+    <div class="stat-item"><span class="stat-val">4.9★</span><span class="stat-lbl">Recensioni Google</span></div>
+    <div class="stat-item"><span class="stat-val">-0</span><span class="stat-lbl">Commissioni terzi</span></div>
+  </div>
+
+  <div class="top-bar">
+    <div class="logo"><span class="logo-a">Digital Evolution</span><span class="logo-b">Italy · Siti Web</span></div>
+    <div>
+      <div class="pair-title"  id="pair-title">Hotel · Restyling</div>
+      <div class="pair-result" id="pair-result">Sito obsoleto → <span class="h">+850% traffico organico</span></div>
+    </div>
+    <div style="text-align:right"><span class="pair-counter" id="pair-counter">01 / 02</span></div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="tabs">
+      <button class="tab is-active" data-pair="0"><span class="tab-dot"></span>Hotel</button>
+      <button class="tab" data-pair="1"><span class="tab-dot"></span>Ristorante</button>
+    </div>
+    <span class="hint">Trascina per confrontare</span>
+  </div>
+
+</div>
+<div class="tag">Effetto: <span>Restyling Siti</span> · Digital Evolution Italy</div>
+
+<script>
+const PAIRS = [
+  { name:'Hotel · Restyling',      result:'Sito obsoleto → <span class="h">+850% traffico organico</span>' },
+  { name:'Ristorante · Restyling', result:'Nessuna presenza → <span class="h">+240% coperti online</span>' },
+]
+const stage   = document.getElementById('stage')
+const divider = document.getElementById('divider')
+const lblB    = document.getElementById('lbl-b')
+const lblA    = document.getElementById('lbl-a')
+const title   = document.getElementById('pair-title')
+const res     = document.getElementById('pair-result')
+const counter = document.getElementById('pair-counter')
+const tabs    = document.querySelectorAll('.tab')
+const pairs   = document.querySelectorAll('.pair')
+const statsEls = [document.getElementById('stats-0'), document.getElementById('stats-1')]
+
+let splitT=50, splitC=12, dragging=false, activePair=0, time=0
+
+function pct(e) {
+  const r=stage.getBoundingClientRect()
+  const cx=e.touches?e.touches[0].clientX:e.clientX
+  return Math.max(5,Math.min(95,((cx-r.left)/r.width)*100))
+}
+stage.addEventListener('mousedown', e=>{ dragging=true; stage.classList.add('dragging'); splitT=pct(e) })
+stage.addEventListener('touchstart',e=>{ dragging=true; stage.classList.add('dragging'); splitT=pct(e) },{passive:true})
+window.addEventListener('mousemove', e=>{ if(dragging) splitT=pct(e) })
+window.addEventListener('touchmove', e=>{ if(dragging) splitT=pct(e) },{passive:true})
+window.addEventListener('mouseup',   ()=>{ dragging=false; stage.classList.remove('dragging') })
+window.addEventListener('touchend',  ()=>{ dragging=false; stage.classList.remove('dragging') })
+
+function setPair(idx) {
+  if(idx===activePair) return; activePair=idx
+  title.classList.add('sw'); res.classList.add('sw')
+  setTimeout(()=>{
+    title.textContent=PAIRS[idx].name; res.innerHTML=PAIRS[idx].result
+    counter.textContent=`0${idx+1} / 0${PAIRS.length}`
+    title.classList.remove('sw'); res.classList.remove('sw')
+  },220)
+  pairs.forEach((p,i)=>p.classList.toggle('is-active',i===idx))
+  tabs.forEach((t,i)=>t.classList.toggle('is-active',i===idx))
+  statsEls.forEach((s,i)=>{ s.style.opacity=i===idx?'1':'0'; s.style.pointerEvents=i===idx?'none':'none' })
+  splitT=50; splitC=50
+}
+tabs.forEach(t=>t.addEventListener('click',()=>setPair(+t.dataset.pair)))
+
+function tick() {
+  if(!dragging&&Math.abs(splitC-50)<3&&time>120){time++;splitT=50+Math.sin(time*0.011)*33}
+  else if(!dragging&&time<=120)time++
+  splitC+=(splitT-splitC)*0.09
+  pairs[activePair].querySelector('.img-after').style.clipPath=`inset(0 0 0 ${splitC}%)`
+  divider.style.left=splitC+'%'
+  // fade stats when divider hides after side
+  statsEls[activePair].style.opacity = splitC > 60 ? '0' : '1'
+  lblB.style.opacity=Math.min(1,splitC/15).toFixed(3)
+  lblA.style.opacity=Math.min(1,(100-splitC)/15).toFixed(3)
+  requestAnimationFrame(tick)
+}
+tick()
+</script>
+</body>
+</html>

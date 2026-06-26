@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mega Menu Animato · Digital Evolution Italy</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #050d18;
+    --surface: #0a1929;
+    --border:  rgba(201,169,97,0.15);
+    --oro:     #c9a961;
+    --text:    #f5f1e8;
+    --dim:     rgba(245,241,232,0.45);
+    --serif:   Georgia, 'Times New Roman', serif;
+    --mono:    'Courier New', monospace;
+    --nav-h:   72px;
+    --ease:    cubic-bezier(0.76, 0, 0.24, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--mono); overflow-x: hidden; }
+
+  /* ── Page hero ── */
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: var(--nav-h);
+    position: relative;
+    overflow: hidden;
+  }
+  .page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(13,60,120,0.35) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 20% 50%, rgba(201,169,97,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero { text-align: center; padding: 4rem 2rem; position: relative; }
+  .hero-pre {
+    font-size: 0.52rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--oro);
+    margin-bottom: 2rem;
+  }
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(3.5rem, 8vw, 6.5rem);
+    font-weight: 300;
+    line-height: 0.95;
+    color: var(--text);
+    margin-bottom: 2.5rem;
+  }
+  .hero-title em { font-style: normal; color: var(--oro); }
+  .hero-hint {
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+  .hero-hint::before, .hero-hint::after {
+    content: '';
+    width: 40px; height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Nav ── */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--nav-h);
+    z-index: 200;
+    background: rgba(5,13,24,0.88);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.4s, border-color 0.4s;
+  }
+  .nav.is-open {
+    background: var(--surface);
+    border-bottom-color: transparent;
+  }
+  .nav-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    height: 100%;
+    padding: 0 3.5rem;
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+  }
+  .nav-logo { text-decoration: none; display: flex; flex-direction: column; line-height: 1.2; flex-shrink: 0; }
+  .nav-logo-a {
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .nav-logo-b {
+    font-size: 0.48rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--oro);
+  }
+
+  .nav-links { display: flex; list-style: none; flex: 1; justify-content: center; gap: 0.1rem; }
+  .nav-item { position: relative; }
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: none;
+    border: none;
+    padding: 0.45rem 0.85rem;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .nav-btn:hover, .nav-item.is-active .nav-btn { color: var(--text); }
+  .nav-chevron {
+    display: inline-block;
+    font-size: 0.45rem;
+    transition: transform 0.35s var(--ease-out);
+  }
+  .nav-item.is-active .nav-chevron { transform: rotate(180deg); }
+
+  .nav-right { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+  .nav-cta {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--oro);
+    text-decoration: none;
+    border: 1px solid rgba(201,169,97,0.3);
+    padding: 0.4rem 0.9rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .nav-cta:hover { background: rgba(201,169,97,0.1); border-color: var(--oro); }
+
+  .nav-x {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.4rem;
+    transition: color 0.2s, transform 0.3s var(--ease-out), opacity 0.2s;
+    opacity: 0;
+    pointer-events: none;
+    transform: rotate(-90deg);
+  }
+  .nav.is-open .nav-x { opacity: 1; pointer-events: auto; transform: rotate(0deg); }
+  .nav-x:hover { color: var(--text); }
+
+  /* ── Mega Overlay ── */
+  .mega {
+    position: fixed;
+    top: var(--nav-h);
+    left: 0; right: 0;
+    height: 440px;
+    z-index: 150;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 0.65s var(--ease);
+    pointer-events: none;
+  }
+  .mega.is-open {
+    clip-path: inset(0 0 0% 0);
+    pointer-events: auto;
+  }
+
+  /* Panels */
+  .mega-panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+  .mega-panel.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Left column */
+  .ml {
+    flex: 1;
+    padding: 3rem 4rem 3rem 5vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 1px solid var(--border);
+    min-width: 0;
+  }
+  .ml-cat {
+    font-size: 0.5rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--oro);
+    margin-bottom: 2rem;
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+  }
+  .mega.is-open .mega-panel.is-visible .ml-cat { opacity: 1; transform: translateY(0); }
+
+  .ml-list { list-style: none; }
+  .ml-list li { border-bottom: 1px solid rgba(201,169,97,0.1); }
+  .ml-list li:first-child { border-top: 1px solid rgba(201,169,97,0.1); }
+
+  .ml-link {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 0;
+    font-family: var(--serif);
+    font-size: clamp(1.7rem, 2.6vw, 2.5rem);
+    font-weight: 300;
+    color: var(--text);
+    text-decoration: none;
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      transform 0.55s var(--ease-out),
+      opacity   0.55s ease,
+      color     0.25s;
+  }
+  .mega.is-open .mega-panel.is-visible .ml-link { transform: translateY(0); opacity: 1; }
+  .ml-link:hover { color: var(--oro); }
+
+  .ml-bar {
+    flex: 1;
+    height: 1px;
+    background: rgba(201,169,97,0.12);
+    position: relative;
+    overflow: hidden;
+  }
+  .ml-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--oro);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s var(--ease-out);
+  }
+  .ml-link:hover .ml-bar::after { transform: scaleX(1); }
+
+  .ml-arr {
+    font-size: 0.9rem;
+    color: var(--oro);
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.3s, transform 0.35s var(--ease-out);
+    flex-shrink: 0;
+  }
+  .ml-link:hover .ml-arr { opacity: 1; transform: translateX(0); }
+
+  .ml-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.75rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-decoration: none;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out), color 0.2s;
+    width: fit-content;
+  }
+  .mega.is-open .mega-panel.is-visible .ml-all { opacity: 1; transform: translateY(0); }
+  .ml-all:hover { color: var(--oro); }
+  .ml-all-line {
+    display: inline-block;
+    width: 0;
+    height: 1px;
+    background: var(--oro);
+    transition: width 0.4s var(--ease-out);
+    vertical-align: middle;
+  }
+  .ml-all:hover .ml-all-line { width: 48px; }
+
+  /* Right panel — featured image */
+  .mr {
+    flex: 0 0 42%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feat-img {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.65s ease;
+  }
+  .feat-img.is-active { opacity: 1; animation: kb 7s ease forwards; }
+  @keyframes kb { from { transform: scale(1.06); } to { transform: scale(1.0); } }
+
+  .feat-glow {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.65s ease;
+    pointer-events: none;
+  }
+  .feat-glow.is-active { opacity: 1; }
+
+  .feat-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: linear-gradient(135deg, rgba(10,25,41,0.35) 0%, transparent 40%),
+                linear-gradient(to bottom, transparent 40%, rgba(5,13,24,0.9) 100%);
+    pointer-events: none;
+  }
+
+  .feat-cap {
+    position: absolute;
+    bottom: 1.75rem;
+    left: 1.75rem;
+    z-index: 3;
+  }
+  .feat-cap-item {
+    position: absolute;
+    bottom: 0; left: 0;
+    font-size: 0.52rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(245,241,232,0.55);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.4s, transform 0.4s var(--ease-out);
+  }
+  .feat-cap-item.is-active { opacity: 1; transform: translateY(0); }
+
+  /* Scrim */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    top: var(--nav-h);
+    background: rgba(0,0,0,0.55);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  .scrim.is-visible { opacity: 1; pointer-events: auto; }
+
+  /* Tag badge */
+  .tag {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    font-size: 0.48rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.65rem;
+    z-index: 300;
+    background: rgba(10,25,41,0.8);
+    backdrop-filter: blur(8px);
+  }
+  .tag span { color: var(--oro); }
+</style>
+</head>
+<body>
+
+<!-- Page -->
+<div class="page">
+  <div class="hero">
+    <p class="hero-pre">Demo · Mega Menu Animato</p>
+    <h1 class="hero-title">Esplora il<br><em>Sud Italia.</em></h1>
+    <p class="hero-hint">Clicca sui link nel menu per il demo</p>
+  </div>
+</div>
+
+<!-- Scrim -->
+<div class="scrim" id="scrim"></div>
+
+<!-- Nav -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">
+      <span class="nav-logo-a">Digital Evolution</span>
+      <span class="nav-logo-b">Italy · DMC</span>
+    </a>
+
+    <ul class="nav-links">
+      <li class="nav-item" data-menu="destinazioni">
+        <button class="nav-btn">Destinazioni <span class="nav-chevron">▾</span></button>
+      </li>
+      <li class="nav-item" data-menu="esperienze">
+        <button class="nav-btn">Esperienze <span class="nav-chevron">▾</span></button>
+      </li>
+      <li class="nav-item" data-menu="servizi">
+        <button class="nav-btn">Servizi <span class="nav-chevron">▾</span></button>
+      </li>
+    </ul>
+
+    <div class="nav-right">
+      <a class="nav-cta" href="#">Contattaci →</a>
+      <button class="nav-x" id="nav-x" title="Chiudi">✕</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mega Menu -->
+<div class="mega" id="mega">
+
+  <!-- Destinazioni -->
+  <div class="mega-panel" id="panel-destinazioni">
+    <div class="ml">
+      <p class="ml-cat">01 · Destinazioni</p>
+      <ul class="ml-list">
+        <li><a class="ml-link" data-img="0" href="#">Calabria Jonica<span class="ml-bar"></span><span class="ml-arr">→</span></a></li>
+        <li><a class="ml-link" data-img="1" href="#">Tropea<span class="ml-bar"></span><span class="ml-arr">→</span></a></li>
+        <li><a class="ml-link" data-img="2" href="#">Sicilia<span class="ml-bar"></span><span class="ml-arr">→</span></a></li>
+      </ul>
+      <a class="ml-all" href="#">Tutte le destinazioni <span class="ml-all-line"></span> →</a>
+    </div>
+    <div class="mr">
+      <div class="feat-img is-active" style="background-image:url(img/menu/menu-dest-1.jpg)"></div>
+      <div class="feat-img" style="background-image:url(img/menu/menu-dest-2.jpg)"></div>
+      <div class="feat-img" style="background-image:url(img/menu/menu-dest-3.jpg)"></div>
+      <div class="feat-glow is-active" style="background:radial-gradient(ellipse 100% 70% at 50% 90%, rgba(13,90,140,0.55) 0%, transparent 60%)"></div>
+      <div class="feat-glow" style="background:radial-gradient(ellipse 100% 70% at 50% 90%, rgba(180,80,20,0.55) 0%, transparent 60%)"></div>
+      <div class="feat-glow" style="background:radial-gradient(ellipse 100% 70% at 50% 90%, rgba(90,50,10,0.55) 0%, transparent 60%)"></div>
+      <div class="feat-overlay"></div>
+      <div class="feat-cap">
+        <span class="feat-cap-item is-active" data-for="0">Calabria Jonica · Costa Ionica</span>
+        <span class="feat-cap-item" data-for="1">Tropea · Vibo Valentia</span>
+        <span class="feat-cap-item" data-for="2">Sicilia · Magna Graecia</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Esperienze -->
+  <div class="mega-panel" id="panel-esperienze">
+    <div class="ml">
+      <p class="ml-cat">02 · Esperienze</p>
+      <ul class="ml-list">
+        <li><a class="ml-link" data-img="0" href="#">Enogastronomia<span class="ml-bar"></span><span class="ml-arr">→</span></a></li>
+        <li><a class="ml-link" data-img="1" href="#">Mare & Spiagge<span class="ml-bar"></span><span class="ml-arr">→</span></a></li>
+        <li><a class="ml-link" data-img="2" href="#">Cultura & Arte<span class="ml-bar"></span><span class="ml-arr">→</span></a></li>
+      </ul>
+      <a class="ml-all" href="#">Tutte le esperienze <span class="ml-all-line"></span> →</a>
+    </div>
+    <div class="mr">
+      <div class="feat-img is-active" style="background-image:url(img/menu/menu-esp-1.jpg)"></div>
+      <div class="feat-img" style="background-image:url(img/menu/menu-esp-2.jpg)"></div>
+      <div class="feat-img" style="background-image:url(img/menu/menu-esp-3.jpg)"></div>
+      <div class="feat-glow is-active" style="background:radial-gradient(ellipse 100% 70% at 50% 90%, rgba(180,100,20,0.55) 0%, transparent 60%)"></div>
+      <div class="feat-glow" style="background:radial-gradient(ellipse 100% 70% at 50% 90%, rgba(13,140,120,0.55) 0%, transparent 60%)"></div>
+      <div class="feat-glow" style="background:radial-gradient(ellipse 100% 70% at 50% 90%, rgba(160,120,20,0.55) 0%, transparent 60%)"></div>
+      <div class="feat-overlay"></div>
+      <div class="feat-cap">
+        <span class="feat-cap-item is-active" data-for="0">Enogastronomia · Sapori del Sud</span>
+        <span class="feat-cap-item" data-for="1">Costa degli Dei · Calabria</span>
+        <span class="feat-cap-item" data-for="2">Magna Graecia · Eredità Millenaria</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Servizi -->
+  <div class="mega-panel" id="panel-servizi">
+    <div class="ml">
+      <p class="ml-cat">03 · Servizi</p>
+      <ul class="ml-list">
+        <li><a class="ml-link" data-img="0" href="#">Tour Privati<span class="ml-bar"></span><span class="ml-arr">→</span></a></li>
+        <li><a class="ml-link" data-img="1" href="#">Wedding & Events<span class="ml-bar"></span><span class="ml-arr">→</span></a></li>
+        <li><a class="ml-link" data-img="2" href="#">Corporate Retreat<span class="ml-bar"></span><span class="ml-arr">→</span></a></li>
+      </ul>
+      <a class="ml-all" href="#">Tutti i servizi <span class="ml-all-line"></span> →</a>
+    </div>
+    <div class="mr">
+      <div class="feat-img is-active" style="background-image:url(img/menu/menu-svc-1.jpg)"></div>
+      <div class="feat-img" style="background-image:url(img/menu/menu-svc-2.jpg)"></div>
+      <div class="feat-img" style="background-image:url(img/menu/menu-svc-3.jpg)"></div>
+      <div class="feat-glow is-active" style="background:radial-gradient(ellipse 100% 70% at 50% 90%, rgba(30,80,40,0.55) 0%, transparent 60%)"></div>
+      <div class="feat-glow" style="background:radial-gradient(ellipse 100% 70% at 50% 90%, rgba(200,160,80,0.55) 0%, transparent 60%)"></div>
+      <div class="feat-glow" style="background:radial-gradient(ellipse 100% 70% at 50% 90%, rgba(20,40,100,0.55) 0%, transparent 60%)"></div>
+      <div class="feat-overlay"></div>
+      <div class="feat-cap">
+        <span class="feat-cap-item is-active" data-for="0">Tour Privati · Amalfi Coast</span>
+        <span class="feat-cap-item" data-for="1">Wedding · Calabria Vista Mare</span>
+        <span class="feat-cap-item" data-for="2">Corporate · Villa Mediterranea</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="tag">Effetto: <span>Mega Menu</span> · Digital Evolution Italy</div>
+
+<script>
+const nav    = document.getElementById('nav')
+const mega   = document.getElementById('mega')
+const scrim  = document.getElementById('scrim')
+const navX   = document.getElementById('nav-x')
+const items  = document.querySelectorAll('.nav-item')
+let active   = null
+
+function open(id) {
+  // Close previous panel without re-animating overlay
+  if (active) {
+    document.getElementById(`panel-${active}`).classList.remove('is-visible')
+    document.querySelector(`[data-menu="${active}"]`).classList.remove('is-active')
+  }
+
+  active = id
+  mega.classList.add('is-open')
+  nav.classList.add('is-open')
+  scrim.classList.add('is-visible')
+
+  const panel = document.getElementById(`panel-${id}`)
+  panel.classList.add('is-visible')
+  document.querySelector(`[data-menu="${id}"]`).classList.add('is-active')
+
+  // Stagger delays
+  panel.querySelector('.ml-cat').style.transitionDelay = '0.08s'
+  panel.querySelectorAll('.ml-link').forEach((l, i) => {
+    l.style.transitionDelay = `${0.12 + i * 0.07}s`
+  })
+  panel.querySelector('.ml-all').style.transitionDelay =
+    `${0.12 + panel.querySelectorAll('.ml-link').length * 0.07 + 0.04}s`
+}
+
+function close() {
+  if (!active) return
+  // Reset delays before closing so links snap back
+  mega.querySelectorAll('.ml-link, .ml-cat, .ml-all').forEach(el => {
+    el.style.transitionDelay = '0s'
+  })
+  document.getElementById(`panel-${active}`).classList.remove('is-visible')
+  document.querySelector(`[data-menu="${active}"]`).classList.remove('is-active')
+  mega.classList.remove('is-open')
+  nav.classList.remove('is-open')
+  scrim.classList.remove('is-visible')
+  active = null
+}
+
+items.forEach(item => {
+  item.querySelector('.nav-btn').addEventListener('click', e => {
+    e.stopPropagation()
+    const id = item.dataset.menu
+    if (active === id) close()
+    else open(id)
+  })
+})
+
+navX.addEventListener('click', close)
+scrim.addEventListener('click', close)
+document.addEventListener('keydown', e => { if (e.key === 'Escape') close() })
+
+// Image switch on link hover
+document.querySelectorAll('.ml-link').forEach(link => {
+  link.addEventListener('mouseenter', () => {
+    const idx = +link.dataset.img
+    if (isNaN(idx)) return
+    const panel = link.closest('.mega-panel')
+
+    panel.querySelectorAll('.feat-img').forEach((el, i) =>
+      el.classList.toggle('is-active', i === idx))
+    panel.querySelectorAll('.feat-glow').forEach((el, i) =>
+      el.classList.toggle('is-active', i === idx))
+    panel.querySelectorAll('.feat-cap-item').forEach(el =>
+      el.classList.toggle('is-active', +el.dataset.for === idx))
+  })
+})
+</script>
+</body>
+</html>
