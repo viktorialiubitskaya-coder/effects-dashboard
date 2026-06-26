@@ -23,7 +23,7 @@
     width:200px;height:268px;margin:-134px 0 0 -100px;
     border-radius:8px;overflow:hidden;
     transform-style:preserve-3d;will-change:transform,opacity;
-    box-shadow:0 24px 60px rgba(0,0,0,.6);
+    box-shadow:0 14px 34px rgba(0,0,0,.55);
     background:#111}
   .card img{width:100%;height:100%;object-fit:cover;display:block;
     filter:saturate(1.05) contrast(1.02)}
@@ -38,14 +38,17 @@
     background:radial-gradient(ellipse at center,transparent 32%,rgba(5,5,5,.72) 100%)}
   .floating{position:fixed;z-index:10;top:50%;left:50%;
     transform:translate(-50%,-50%);text-align:center;
-    display:flex;flex-direction:column;align-items:center;gap:.9rem;
-    pointer-events:none;will-change:transform;mix-blend-mode:difference}
-  .f-pre{font-size:.5rem;letter-spacing:.42em;text-transform:uppercase;color:#fff;
+    display:flex;flex-direction:column;align-items:center;gap:1.1rem;
+    pointer-events:none;will-change:transform}
+  .f-pre{font-size:.65rem;letter-spacing:.42em;text-transform:uppercase;color:#fff;
+    text-shadow:0 2px 14px rgba(0,0,0,.85);
     opacity:0;animation:fu .8s .3s var(--ease) forwards}
-  .f-title{font-family:var(--serif);font-weight:300;font-size:clamp(2.6rem,6.5vw,5.2rem);
-    line-height:.95;color:#fff;opacity:0;animation:fu .9s .45s var(--ease) forwards}
-  .f-title em{font-style:italic;color:var(--oro)}
-  .f-line{width:38px;height:1px;background:rgba(255,255,255,.6);
+  .f-title{font-family:var(--serif);font-weight:300;font-size:clamp(3.2rem,8.5vw,6.6rem);
+    line-height:.95;color:#fff;text-shadow:0 4px 32px rgba(0,0,0,.9),0 2px 8px rgba(0,0,0,.7);
+    opacity:0;animation:fu .9s .45s var(--ease) forwards}
+  .f-title em{font-style:italic;color:#e6c478;text-shadow:0 0 28px rgba(201,169,97,.55),0 4px 32px rgba(0,0,0,.85)}
+  .f-line{width:52px;height:2px;background:rgba(255,255,255,.85);
+    box-shadow:0 0 12px rgba(255,255,255,.4);
     opacity:0;animation:fu .7s .65s var(--ease) forwards}
   @keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
   .nav{position:fixed;top:0;left:0;right:0;z-index:20;padding:1.3rem 2rem;
@@ -96,7 +99,7 @@ for (let i = 0; i < COUNT; i++){
   const el = document.createElement('div');
   el.className = 'card';
   const n = i + 1;
-  el.innerHTML = `<img src="img/dmc/dmc-${n}.jpg" alt="" loading="eager"/>`
+  el.innerHTML = `<img src="img/dmc-sm/dmc-${n}.jpg" alt="" loading="eager" decoding="async"/>`
                + `<span class="num">${String(n).padStart(2,'0')} / ${COUNT}</span>`;
   spiralEl.appendChild(el);
   cards.push(el);
@@ -130,7 +133,8 @@ function render(){
       + `rotateY(${(-angle * 180/Math.PI).toFixed(1)}deg) `
       + `scale(${scale.toFixed(3)})`;
     el.style.opacity = Math.min(opacity, 1).toFixed(3);
-    el.style.zIndex = Math.round(depth * 100);
+    const zi = Math.round(depth * 100);
+    if (el._zi !== zi){ el.style.zIndex = zi; el._zi = zi; }
   }
 }
 
