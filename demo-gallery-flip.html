@@ -50,6 +50,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   cursor:pointer;
   transform-style:preserve-3d;
   transition:transform 0.5s ease;
+  will-change:transform;
 }
 .grid-wrap{perspective:1400px}
 .tile.flipped{transform:rotateY(180deg)}
@@ -96,30 +97,30 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 const ROWS = 4, COLS = 6
 
 const PHOTOS = [
-  ['img/ristorante/r-1.jpg',  '50% 30%'],
-  ['img/ristorante/r-2.jpg',  '50% 50%'],
-  ['img/ristorante/r-3.jpg',  '40% 60%'],
-  ['img/ristorante/r-4.jpg',  '60% 40%'],
-  ['img/ristorante/r-5.jpg',  '50% 50%'],
-  ['img/ristorante/r-6.jpg',  '50% 40%'],
-  ['img/ristorante/r-7.jpg',  '45% 55%'],
-  ['img/ristorante/r-8.jpg',  '55% 45%'],
-  ['img/ristorante/r-9.jpg',  '50% 50%'],
-  ['img/ristorante/r-11.jpg', '50% 40%'],
-  ['img/ristorante/r-12.jpg', '50% 50%'],
-  ['img/ristorante/r-10.jpg', '50% 60%'],
-  ['img/ristorante/r-2.jpg',  '70% 30%'],
-  ['img/ristorante/r-4.jpg',  '30% 65%'],
-  ['img/ristorante/r-1.jpg',  '30% 60%'],
-  ['img/ristorante/r-6.jpg',  '65% 35%'],
-  ['img/ristorante/r-3.jpg',  '60% 30%'],
-  ['img/ristorante/r-5.jpg',  '35% 55%'],
-  ['img/ristorante/r-7.jpg',  '70% 50%'],
-  ['img/ristorante/r-9.jpg',  '30% 45%'],
-  ['img/ristorante/r-8.jpg',  '55% 60%'],
-  ['img/ristorante/r-11.jpg', '40% 40%'],
-  ['img/ristorante/r-12.jpg', '60% 50%'],
-  ['img/ristorante/r-10.jpg', '50% 35%'],
+  ['img/ristorante-sm/r-1.jpg',  '50% 30%'],
+  ['img/ristorante-sm/r-2.jpg',  '50% 50%'],
+  ['img/ristorante-sm/r-3.jpg',  '40% 60%'],
+  ['img/ristorante-sm/r-4.jpg',  '60% 40%'],
+  ['img/ristorante-sm/r-5.jpg',  '50% 50%'],
+  ['img/ristorante-sm/r-6.jpg',  '50% 40%'],
+  ['img/ristorante-sm/r-7.jpg',  '45% 55%'],
+  ['img/ristorante-sm/r-8.jpg',  '55% 45%'],
+  ['img/ristorante-sm/r-9.jpg',  '50% 50%'],
+  ['img/ristorante-sm/r-11.jpg', '50% 40%'],
+  ['img/ristorante-sm/r-12.jpg', '50% 50%'],
+  ['img/ristorante-sm/r-10.jpg', '50% 60%'],
+  ['img/ristorante-sm/r-2.jpg',  '70% 30%'],
+  ['img/ristorante-sm/r-4.jpg',  '30% 65%'],
+  ['img/ristorante-sm/r-1.jpg',  '30% 60%'],
+  ['img/ristorante-sm/r-6.jpg',  '65% 35%'],
+  ['img/ristorante-sm/r-3.jpg',  '60% 30%'],
+  ['img/ristorante-sm/r-5.jpg',  '35% 55%'],
+  ['img/ristorante-sm/r-7.jpg',  '70% 50%'],
+  ['img/ristorante-sm/r-9.jpg',  '30% 45%'],
+  ['img/ristorante-sm/r-8.jpg',  '55% 60%'],
+  ['img/ristorante-sm/r-11.jpg', '40% 40%'],
+  ['img/ristorante-sm/r-12.jpg', '60% 50%'],
+  ['img/ristorante-sm/r-10.jpg', '50% 35%'],
 ]
 
 const grid  = document.getElementById('grid')
